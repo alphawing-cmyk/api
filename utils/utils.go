@@ -14,6 +14,7 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	"github.com/rabbitmq/amqp091-go"
+	"github.com/redis/go-redis/v9"
 )
 
 func ValidationErrors(validatorInstance *validator.Validate, data interface{}) map[string]string {
@@ -121,5 +122,26 @@ func SetupAMQPExchange(channel *amqp091.Channel, queries *db.Queries) error {
 		}
 	}
 
+	return nil
+}
+
+func SetupRedisChannels(rdb *redis.Client, queries *db.Queries) error {
+	ctx := context.Background()
+
+	// Set all services
+	services, err := queries.GetAllServices(ctx)
+	if err != nil {
+		logging.ColorFatal(err)
+		return err
+	}
+	for _, service := range services {
+		key := fmt.Sprintf("channel_%s", service.Username)
+		err := rdb.Set(ctx, key, "initialized", 5*time.Hour).Err()
+
+		if err != nil {
+			log.Fatalf("Failed to set metadata for channel %s: %v", service.Username, err)
+			return err
+		}
+	}
 	return nil
 }
