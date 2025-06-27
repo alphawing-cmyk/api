@@ -1,19 +1,21 @@
 package main
 
 import (
+	db "api/db/sqlc"
 	"api/logging"
 	"api/routes"
 	"api/utils"
+	"context"
 	"database/sql"
 	"fmt"
 	"log"
 	"net/http"
 	"os"
+	"strconv"
 	"time"
 
-	db "api/db/sqlc"
-
 	_ "github.com/lib/pq"
+	"github.com/redis/go-redis/v9"
 
 	"github.com/joho/godotenv"
 )
@@ -21,6 +23,7 @@ import (
 func main() {
 
 	err := godotenv.Load(".env")
+	ctx := context.Background()
 
 	if err != nil {
 		logging.ColorFatal("Error loading .env file")
@@ -35,18 +38,37 @@ func main() {
 	}
 
 	dbConn, err := sql.Open("postgres", connStr)
+	if err != nil {
+		log.Fatalf("Could not connect to postgres database")
+	}
+	dbIndex, err := strconv.Atoi(os.Getenv("REDIS_DB"))
+	if err != nil {
+		log.Fatalf("Invalid REDIS_RB value: %v", err)
+	}
+
+	rdb := redis.NewClient(&redis.Options{
+		Addr:     os.Getenv("REDIS_URL"),
+		Password: os.Getenv("REDIS_PASSWORD"),
+		DB:       dbIndex,
+	})
 
 	if err != nil {
 		logging.ColorFatal(err.Error())
 		return
 	}
+
+	ping, err := rdb.Ping(ctx).Result()
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println("Connected:", ping)
+
 	defer dbConn.Close()
 	queries := db.New(dbConn)
 
 	defer dbConn.Close()
 
 	router := routes.NewRouter(queries)
-
 	port := os.Getenv("API_PORT")
 
 	if port != "" {
