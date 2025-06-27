@@ -16,7 +16,6 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	"github.com/gorilla/mux"
-	"github.com/rabbitmq/amqp091-go"
 )
 
 func kvRoutes(r *mux.Router, s *ServiceHandler) {
@@ -43,22 +42,18 @@ func kvRoutes(r *mux.Router, s *ServiceHandler) {
 }
 
 func generateAesSecretHandler(w http.ResponseWriter, r *http.Request) {
-	var data map[string]string = make(map[string]string)
+	var data = make(map[string]string)
 	_, hexKey, err := utils.AesGenerateKey()
-
 	if err != nil {
 		http.Error(w, "Could not generate key", http.StatusBadRequest)
 		return
 	}
-
 	data["key"] = hexKey
 	jsonBody, err := json.Marshal(data)
-
 	if err != nil {
 		http.Error(w, "Error converting data", http.StatusInternalServerError)
 		return
 	}
-
 	w.Header().Set("Content-Type", "application/json")
 	w.Write(jsonBody)
 }
@@ -70,13 +65,11 @@ type EncryptBody struct {
 }
 
 func (s *ServiceHandler) kvEncrypt(w http.ResponseWriter, r *http.Request) {
-
 	ctx := context.Background()
 	var encryptBody EncryptBody
-	var data map[string]string = make(map[string]string)
+	var data = make(map[string]string)
 
 	err := json.NewDecoder(r.Body).Decode(&encryptBody)
-
 	if err != nil {
 		logging.ColorFatal(err)
 		http.Error(w, "Could not decode json data", http.StatusBadRequest)
@@ -84,7 +77,6 @@ func (s *ServiceHandler) kvEncrypt(w http.ResponseWriter, r *http.Request) {
 	}
 
 	encrypted, err := utils.AesEncrypt(os.Getenv("AES_SECRET"), encryptBody.Value)
-
 	if err != nil {
 		logging.ColorFatal(err)
 		http.Error(w, "Could not encrypt value", http.StatusBadRequest)
@@ -92,68 +84,22 @@ func (s *ServiceHandler) kvEncrypt(w http.ResponseWriter, r *http.Request) {
 	}
 
 	decrypted, err := utils.AesDecrypt(os.Getenv("AES_SECRET"), encrypted)
-
 	if err != nil {
 		logging.ColorFatal(err)
 		http.Error(w, "Could not decrypt value", http.StatusBadRequest)
 		return
 	}
 
-	// Insert into DB
 	dbParams := db.InsertKvParams{
 		Key:    encryptBody.Key,
 		Value:  encrypted,
 		UserID: encryptBody.UserID,
 	}
 	err = s.db.queries.InsertKv(ctx, dbParams)
-
 	if err != nil {
 		logging.ColorFatal(err)
 		http.Error(w, "Could not store kv pair into database", http.StatusBadRequest)
 		return
-	}
-
-	// Find user
-	user, err := s.db.queries.GetUserById(ctx, int32(encryptBody.UserID))
-
-	if err != nil {
-		logging.ColorFatal(err)
-		http.Error(w, "Could not find user for record", http.StatusBadRequest)
-		return
-	}
-
-	if user.Role == "SERVICE" {
-
-		message := map[string]interface{}{
-			"user_id": encryptBody.UserID,
-			"action":  "add",
-			"message": "Added a new key, service request updated credentials",
-		}
-
-		// Convert message to JSON
-		jsonMessage, err := json.Marshal(message)
-
-		if err != nil {
-			logging.ColorFatal(err)
-			http.Error(w, "Could not create json object for rabbitmq publish", http.StatusBadRequest)
-			return
-		}
-
-		err = s.amqp.channel.Publish(
-			"vault",
-			"",
-			false,
-			false,
-			amqp091.Publishing{
-				ContentType: "application/json",
-				Body:        jsonMessage,
-			})
-
-		if err != nil {
-			logging.ColorFatal(err)
-			http.Error(w, "Could not publish secret", http.StatusBadRequest)
-			return
-		}
 	}
 
 	data["key"] = encryptBody.Key
@@ -162,7 +108,6 @@ func (s *ServiceHandler) kvEncrypt(w http.ResponseWriter, r *http.Request) {
 	data["decrypted"] = decrypted
 
 	jsonBody, err := json.Marshal(data)
-
 	if err != nil {
 		logging.ColorFatal(err)
 		http.Error(w, "Error converting data", http.StatusInternalServerError)
@@ -182,7 +127,6 @@ func (s *ServiceHandler) kvDelete(w http.ResponseWriter, r *http.Request) {
 	var deleteItem DeleteItem
 
 	err := json.NewDecoder(r.Body).Decode(&deleteItem)
-
 	if err != nil {
 		logging.ColorFatal(err)
 		http.Error(w, "Could not decode json data", http.StatusBadRequest)
@@ -195,7 +139,6 @@ func (s *ServiceHandler) kvDelete(w http.ResponseWriter, r *http.Request) {
 	})
 
 	validationErrors := utils.ValidationErrors(validate, deleteItem)
-
 	if validationErrors != nil {
 		logging.ColorFatal(validationErrors)
 		w.Header().Set("Content-Type", "application/json")
@@ -204,8 +147,7 @@ func (s *ServiceHandler) kvDelete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	kvItem, err := s.db.queries.GetKvById(ctx, deleteItem.ID)
-
+	_, err = s.db.queries.GetKvById(ctx, deleteItem.ID)
 	if err != nil {
 		logging.ColorFatal(err)
 		http.Error(w, "Could not retrieve kv record", http.StatusBadRequest)
@@ -213,55 +155,10 @@ func (s *ServiceHandler) kvDelete(w http.ResponseWriter, r *http.Request) {
 	}
 
 	err = s.db.queries.DeleteKvById(ctx, deleteItem.ID)
-
 	if err != nil {
 		logging.ColorFatal(err)
 		http.Error(w, "Could not delete record", http.StatusBadRequest)
 		return
-	}
-
-	// Find user
-	user, err := s.db.queries.GetUserById(ctx, int32(kvItem.UserID))
-
-	if err != nil {
-		logging.ColorFatal(err)
-		http.Error(w, "Could not find user for record", http.StatusBadRequest)
-		return
-	}
-
-	if user.Role == "SERVICE" {
-
-		message := map[string]interface{}{
-			"user_id": kvItem.UserID,
-			"key":     kvItem.Key,
-			"action":  "delete",
-			"message": "Deleted a key, service request updated credentials",
-		}
-
-		// Convert message to JSON
-		jsonMessage, err := json.Marshal(message)
-
-		if err != nil {
-			logging.ColorFatal(err)
-			http.Error(w, "Could not create json object for rabbitmq publish", http.StatusBadRequest)
-			return
-		}
-
-		err = s.amqp.channel.Publish(
-			"vault",
-			"",
-			false,
-			false,
-			amqp091.Publishing{
-				ContentType: "application/json",
-				Body:        jsonMessage,
-			})
-
-		if err != nil {
-			logging.ColorFatal(err)
-			http.Error(w, "Could not publish secret", http.StatusBadRequest)
-			return
-		}
 	}
 
 	w.WriteHeader(http.StatusOK)
@@ -280,7 +177,6 @@ func (s *ServiceHandler) kvUpdate(w http.ResponseWriter, r *http.Request) {
 	var updateItem UpdateItem
 
 	err := json.NewDecoder(r.Body).Decode(&updateItem)
-
 	if err != nil {
 		logging.ColorFatal(err)
 		http.Error(w, "Could not decode json data", http.StatusBadRequest)
@@ -293,7 +189,6 @@ func (s *ServiceHandler) kvUpdate(w http.ResponseWriter, r *http.Request) {
 	})
 
 	validationErrors := utils.ValidationErrors(validate, updateItem)
-
 	if validationErrors != nil {
 		logging.ColorFatal(validationErrors)
 		w.Header().Set("Content-Type", "application/json")
@@ -302,75 +197,28 @@ func (s *ServiceHandler) kvUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	updateKvParams := db.UpdateKvParams{
-		ID:     updateItem.ID,
-		Key:    updateItem.Key,
-		Value:  updateItem.Value,
-		UserID: updateItem.UserID,
-	}
-	updateKvParams.Value, err = utils.AesEncrypt(os.Getenv("AES_SECRET"), updateItem.Value)
-
+	encrypted, err := utils.AesEncrypt(os.Getenv("AES_SECRET"), updateItem.Value)
 	if err != nil {
 		logging.ColorFatal(err)
 		http.Error(w, "Could not update data, encrypting the kv pair isn't working", http.StatusBadRequest)
 		return
 	}
 
+	updateKvParams := db.UpdateKvParams{
+		ID:     updateItem.ID,
+		Key:    updateItem.Key,
+		Value:  encrypted,
+		UserID: updateItem.UserID,
+	}
+
 	err = s.db.queries.UpdateKv(ctx, updateKvParams)
-
 	if err != nil {
 		logging.ColorFatal(err)
-		http.Error(w, "Could not delete record", http.StatusBadRequest)
+		http.Error(w, "Could not update record", http.StatusBadRequest)
 		return
-	}
-
-	// Find user
-	user, err := s.db.queries.GetUserById(ctx, int32(updateItem.UserID))
-
-	if err != nil {
-		logging.ColorFatal(err)
-		http.Error(w, "Could not find user for record", http.StatusBadRequest)
-		return
-	}
-
-	if user.Role == "SERVICE" {
-
-		message := map[string]interface{}{
-			"user_id": updateItem.UserID,
-			"id":      updateItem.ID,
-			"key":     updateItem.Key,
-			"action":  "updated",
-			"message": "Updated an existing key, service request updated credentials",
-		}
-
-		// Convert message to JSON
-		jsonMessage, err := json.Marshal(message)
-
-		if err != nil {
-			logging.ColorFatal(err)
-			http.Error(w, "Could not create json object for rabbitmq publish", http.StatusBadRequest)
-			return
-		}
-
-		err = s.amqp.channel.Publish(
-			"vault",
-			"",
-			false,
-			false,
-			amqp091.Publishing{
-				ContentType: "application/json",
-				Body:        jsonMessage,
-			})
-
-		if err != nil {
-			logging.ColorFatal(err)
-			http.Error(w, "Could not publish secret", http.StatusBadRequest)
-			return
-		}
 	}
 
 	jsonBody, err := json.Marshal(updateItem)
-
 	if err != nil {
 		http.Error(w, "Error converting data", http.StatusInternalServerError)
 		return
@@ -392,13 +240,11 @@ func (s *ServiceHandler) getPaginatedKvItems(w http.ResponseWriter, r *http.Requ
 	size := r.URL.Query().Get("size")
 
 	if pageNum, err := strconv.ParseInt(page, 10, 32); err != nil {
-		fmt.Println(err)
 		getItems.Page = 1
 	} else {
 		getItems.Page = int32(pageNum)
 	}
 
-	// Convert size with default value of 10
 	if sizeNum, err := strconv.ParseInt(size, 10, 32); err != nil {
 		getItems.Size = 10
 	} else {
@@ -411,7 +257,6 @@ func (s *ServiceHandler) getPaginatedKvItems(w http.ResponseWriter, r *http.Requ
 	})
 
 	validationErrors := utils.ValidationErrors(validate, getItems)
-
 	if validationErrors != nil {
 		logging.ColorFatal(validationErrors)
 		w.Header().Set("Content-Type", "application/json")
@@ -426,7 +271,6 @@ func (s *ServiceHandler) getPaginatedKvItems(w http.ResponseWriter, r *http.Requ
 	}
 
 	kvItems, err := s.db.queries.GetPaginatedKv(ctx, paginationParams)
-
 	if err != nil {
 		logging.ColorFatal(err)
 		http.Error(w, "Could fetch records", http.StatusBadRequest)
@@ -434,22 +278,21 @@ func (s *ServiceHandler) getPaginatedKvItems(w http.ResponseWriter, r *http.Requ
 	}
 
 	numRecords, err := s.db.queries.CountKv(ctx)
-
 	if err != nil {
 		logging.ColorFatal(err)
 		http.Error(w, "Could fetch records", http.StatusBadRequest)
 		return
 	}
 
-	var data map[string]any = map[string]any{}
-	data["items"] = kvItems
-	data["page"] = getItems.Page
-	data["size"] = getItems.Size
-	data["total"] = numRecords
-	data["pages"] = (numRecords / int64(getItems.Size)) + 1
+	var data = map[string]any{
+		"items": kvItems,
+		"page":  getItems.Page,
+		"size":  getItems.Size,
+		"total": numRecords,
+		"pages": (numRecords / int64(getItems.Size)) + 1,
+	}
 
 	jsonBody, err := json.Marshal(data)
-
 	if err != nil {
 		http.Error(w, "Error converting data", http.StatusInternalServerError)
 		return
@@ -465,14 +308,12 @@ func (s *ServiceHandler) getKvItemsByUser(w http.ResponseWriter, r *http.Request
 	service := params["service"]
 
 	serviceAccount, err := s.db.queries.GetUserByUsername(ctx, service)
-
 	if err != nil {
 		http.Error(w, "Service account could not found", http.StatusNotFound)
 		return
 	}
 
 	kvItems, err := s.db.queries.GetKvByUser(ctx, int64(serviceAccount.ID))
-
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Secrets could not be fetched for SERVICE: %s", service), http.StatusNotFound)
 		return
@@ -487,9 +328,7 @@ func (s *ServiceHandler) getKvItemsByUser(w http.ResponseWriter, r *http.Request
 		kvItems[i].Value = value
 	}
 
-	fmt.Println(kvItems)
 	jsonBody, err := json.Marshal(kvItems)
-
 	if err != nil {
 		http.Error(w, "Error converting data", http.StatusInternalServerError)
 		return
