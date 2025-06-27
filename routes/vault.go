@@ -102,6 +102,38 @@ func (s *ServiceHandler) kvEncrypt(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Find User
+	user, err := s.db.queries.GetUserById(ctx, int32(encryptBody.UserID))
+
+	if err != nil {
+		logging.ColorFatal(err)
+		http.Error(w, "Could not find user for record", http.StatusBadRequest)
+		return
+	}
+
+	if user.Role == "SERVICE" {
+		message := map[string]interface{}{
+			"user_id": encryptBody.UserID,
+			"action":  "add",
+			"message": "Added a new key, service request updated credentials",
+		}
+
+		jsonMessage, err := json.Marshal(message)
+
+		if err != nil {
+			logging.ColorFatal(err)
+			http.Error(w, "Error converting data", http.StatusInternalServerError)
+			return
+		}
+
+		err = s.rdp.client.Publish(ctx, fmt.Sprintf("channel_%s", user.Username), jsonMessage).Err()
+		if err != nil {
+			logging.ColorFatal(err)
+			http.Error(w, "Failed to publish message to Redis", http.StatusInternalServerError)
+			return
+		}
+	}
+
 	data["key"] = encryptBody.Key
 	data["value"] = encryptBody.Value
 	data["encrypted"] = encrypted

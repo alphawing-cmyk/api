@@ -61,14 +61,14 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	fmt.Println("Connected:", ping)
+	fmt.Println("Connected to redis instance PING:", ping)
 
 	defer dbConn.Close()
 	queries := db.New(dbConn)
 
 	defer dbConn.Close()
 
-	router := routes.NewRouter(queries)
+	router := routes.NewRouter(queries, rdb)
 	port := os.Getenv("API_PORT")
 
 	if port != "" {
