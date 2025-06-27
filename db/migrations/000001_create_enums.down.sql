@@ -1,0 +1,4 @@
+DROP TYPE IF EXISTS "ApiStatusType";
+DROP TYPE IF EXISTS "AccountType";
+DROP TYPE IF EXISTS "Broker";
+DROP TYPE IF EXISTS "Role";
