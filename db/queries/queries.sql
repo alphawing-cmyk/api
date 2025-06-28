@@ -108,3 +108,90 @@ FROM kv;
 SELECT * FROM users
 WHERE role = 'service';
 
+-- name: GetTickers :many
+SELECT * FROM tickers;
+
+-- name: GetTickersByMarket :many
+SELECT * FROM tickers
+WHERE market = $1;
+
+-- name: GetTickersByName :one
+SELECT * FROM tickers
+WHERE symbol = $1;
+
+-- name: InsertHistoricalBar :one
+INSERT INTO historical (
+    custom_id,
+    symbol,
+    milliseconds,
+    duration,
+    open,
+    low,
+    high,
+    close,
+    adj_close,
+    volume,
+    vwap,
+    "timestamp",
+    transactions,
+    source,
+    market
+) VALUES (
+    $1,  -- custom_id
+    $2,  -- symbol
+    $3,  -- milliseconds
+    $4,  -- duration
+    $5,  -- open
+    $6,  -- low
+    $7,  -- high
+    $8,  -- close
+    $9,  -- adj_close
+    $10, -- volume
+    $11, -- vwap
+    $12, -- timestamp
+    $13, -- transactions
+    $14, -- source
+    $15  -- market
+)
+ON CONFLICT (custom_id) DO NOTHING
+RETURNING *;
+
+-- name: GetExchange :one
+SELECT * FROM exchanges
+WHERE asset_class = $1 
+AND name = $2;
+
+
+-- name: InsertExchange :one
+INSERT INTO exchanges (
+   acronym,
+   asset_class,
+   name, 
+   type,
+   url
+) VALUES (
+  $1,
+  $2,
+  $3,
+  $4,
+  $5
+)
+RETURNING *;
+
+-- name: GetHoliday :one
+SELECT * FROM holidays
+WHERE date=$1;
+
+-- name: InsertHoliday :one
+INSERT INTO holidays (
+   date,
+   exchange,
+   name,
+   status
+) VALUES (
+  $1,
+  $2,
+  $3,
+  $4
+)
+RETURNING *;

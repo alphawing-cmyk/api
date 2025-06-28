@@ -42,5 +42,6 @@ func NewRouter(
 
 	authRoutes(r, serviceHandler)
 	kvRoutes(r, serviceHandler)
+	symbolRoutes(r, serviceHandler)
 	return r
 }

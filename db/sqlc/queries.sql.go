@@ -8,6 +8,7 @@ package db
 import (
 	"context"
 	"database/sql"
+	"time"
 )
 
 const checkUserExists = `-- name: CheckUserExists :one
@@ -156,6 +157,31 @@ func (q *Queries) GetAllServices(ctx context.Context) ([]User, error) {
 	return items, nil
 }
 
+const getExchange = `-- name: GetExchange :one
+SELECT id, acronym, asset_class, name, type, url FROM exchanges
+WHERE asset_class = $1 
+AND name = $2
+`
+
+type GetExchangeParams struct {
+	AssetClass sql.NullString `json:"asset_class"`
+	Name       sql.NullString `json:"name"`
+}
+
+func (q *Queries) GetExchange(ctx context.Context, arg GetExchangeParams) (Exchange, error) {
+	row := q.db.QueryRowContext(ctx, getExchange, arg.AssetClass, arg.Name)
+	var i Exchange
+	err := row.Scan(
+		&i.ID,
+		&i.Acronym,
+		&i.AssetClass,
+		&i.Name,
+		&i.Type,
+		&i.Url,
+	)
+	return i, err
+}
+
 const getExchanges = `-- name: GetExchanges :many
 SELECT id, acronym, asset_class, name, type, url FROM "exchanges"
 `
@@ -188,6 +214,24 @@ func (q *Queries) GetExchanges(ctx context.Context) ([]Exchange, error) {
 		return nil, err
 	}
 	return items, nil
+}
+
+const getHoliday = `-- name: GetHoliday :one
+SELECT id, date, exchange, name, status FROM holidays
+WHERE date=$1
+`
+
+func (q *Queries) GetHoliday(ctx context.Context, date time.Time) (Holiday, error) {
+	row := q.db.QueryRowContext(ctx, getHoliday, date)
+	var i Holiday
+	err := row.Scan(
+		&i.ID,
+		&i.Date,
+		&i.Exchange,
+		&i.Name,
+		&i.Status,
+	)
+	return i, err
 }
 
 const getKvById = `-- name: GetKvById :one
@@ -315,6 +359,97 @@ func (q *Queries) GetRoles(ctx context.Context) ([]string, error) {
 	return items, nil
 }
 
+const getTickers = `-- name: GetTickers :many
+SELECT id, symbol, name, alt_names, industry, market, market_cap FROM tickers
+`
+
+func (q *Queries) GetTickers(ctx context.Context) ([]Ticker, error) {
+	rows, err := q.db.QueryContext(ctx, getTickers)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Ticker
+	for rows.Next() {
+		var i Ticker
+		if err := rows.Scan(
+			&i.ID,
+			&i.Symbol,
+			&i.Name,
+			&i.AltNames,
+			&i.Industry,
+			&i.Market,
+			&i.MarketCap,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getTickersByMarket = `-- name: GetTickersByMarket :many
+SELECT id, symbol, name, alt_names, industry, market, market_cap FROM tickers
+WHERE market = $1
+`
+
+func (q *Queries) GetTickersByMarket(ctx context.Context, market string) ([]Ticker, error) {
+	rows, err := q.db.QueryContext(ctx, getTickersByMarket, market)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Ticker
+	for rows.Next() {
+		var i Ticker
+		if err := rows.Scan(
+			&i.ID,
+			&i.Symbol,
+			&i.Name,
+			&i.AltNames,
+			&i.Industry,
+			&i.Market,
+			&i.MarketCap,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getTickersByName = `-- name: GetTickersByName :one
+SELECT id, symbol, name, alt_names, industry, market, market_cap FROM tickers
+WHERE symbol = $1
+`
+
+func (q *Queries) GetTickersByName(ctx context.Context, symbol string) (Ticker, error) {
+	row := q.db.QueryRowContext(ctx, getTickersByName, symbol)
+	var i Ticker
+	err := row.Scan(
+		&i.ID,
+		&i.Symbol,
+		&i.Name,
+		&i.AltNames,
+		&i.Industry,
+		&i.Market,
+		&i.MarketCap,
+	)
+	return i, err
+}
+
 const getUserByEmail = `-- name: GetUserByEmail :one
 SELECT id, username, first_name, last_name, email, company, password, is_active, role, img_path, refresh_token, forgot_token FROM USERS
 WHERE email = $1
@@ -411,6 +546,187 @@ func (q *Queries) GetUserByUsername(ctx context.Context, username string) (User,
 		&i.ImgPath,
 		&i.RefreshToken,
 		&i.ForgotToken,
+	)
+	return i, err
+}
+
+const insertExchange = `-- name: InsertExchange :one
+INSERT INTO exchanges (
+   acronym,
+   asset_class,
+   name, 
+   type,
+   url
+) VALUES (
+  $1,
+  $2,
+  $3,
+  $4,
+  $5
+)
+RETURNING id, acronym, asset_class, name, type, url
+`
+
+type InsertExchangeParams struct {
+	Acronym    sql.NullString `json:"acronym"`
+	AssetClass sql.NullString `json:"asset_class"`
+	Name       sql.NullString `json:"name"`
+	Type       sql.NullString `json:"type"`
+	Url        sql.NullString `json:"url"`
+}
+
+func (q *Queries) InsertExchange(ctx context.Context, arg InsertExchangeParams) (Exchange, error) {
+	row := q.db.QueryRowContext(ctx, insertExchange,
+		arg.Acronym,
+		arg.AssetClass,
+		arg.Name,
+		arg.Type,
+		arg.Url,
+	)
+	var i Exchange
+	err := row.Scan(
+		&i.ID,
+		&i.Acronym,
+		&i.AssetClass,
+		&i.Name,
+		&i.Type,
+		&i.Url,
+	)
+	return i, err
+}
+
+const insertHistoricalBar = `-- name: InsertHistoricalBar :one
+INSERT INTO historical (
+    custom_id,
+    symbol,
+    milliseconds,
+    duration,
+    open,
+    low,
+    high,
+    close,
+    adj_close,
+    volume,
+    vwap,
+    "timestamp",
+    transactions,
+    source,
+    market
+) VALUES (
+    $1,  -- custom_id
+    $2,  -- symbol
+    $3,  -- milliseconds
+    $4,  -- duration
+    $5,  -- open
+    $6,  -- low
+    $7,  -- high
+    $8,  -- close
+    $9,  -- adj_close
+    $10, -- volume
+    $11, -- vwap
+    $12, -- timestamp
+    $13, -- transactions
+    $14, -- source
+    $15  -- market
+)
+ON CONFLICT (custom_id) DO NOTHING
+RETURNING id, custom_id, symbol, milliseconds, duration, open, low, high, close, adj_close, volume, vwap, timestamp, transactions, source, market
+`
+
+type InsertHistoricalBarParams struct {
+	CustomID     string         `json:"custom_id"`
+	Symbol       string         `json:"symbol"`
+	Milliseconds sql.NullInt64  `json:"milliseconds"`
+	Duration     sql.NullString `json:"duration"`
+	Open         string         `json:"open"`
+	Low          string         `json:"low"`
+	High         string         `json:"high"`
+	Close        string         `json:"close"`
+	AdjClose     sql.NullString `json:"adj_close"`
+	Volume       sql.NullString `json:"volume"`
+	Vwap         sql.NullString `json:"vwap"`
+	Timestamp    time.Time      `json:"timestamp"`
+	Transactions sql.NullInt32  `json:"transactions"`
+	Source       string         `json:"source"`
+	Market       string         `json:"market"`
+}
+
+func (q *Queries) InsertHistoricalBar(ctx context.Context, arg InsertHistoricalBarParams) (Historical, error) {
+	row := q.db.QueryRowContext(ctx, insertHistoricalBar,
+		arg.CustomID,
+		arg.Symbol,
+		arg.Milliseconds,
+		arg.Duration,
+		arg.Open,
+		arg.Low,
+		arg.High,
+		arg.Close,
+		arg.AdjClose,
+		arg.Volume,
+		arg.Vwap,
+		arg.Timestamp,
+		arg.Transactions,
+		arg.Source,
+		arg.Market,
+	)
+	var i Historical
+	err := row.Scan(
+		&i.ID,
+		&i.CustomID,
+		&i.Symbol,
+		&i.Milliseconds,
+		&i.Duration,
+		&i.Open,
+		&i.Low,
+		&i.High,
+		&i.Close,
+		&i.AdjClose,
+		&i.Volume,
+		&i.Vwap,
+		&i.Timestamp,
+		&i.Transactions,
+		&i.Source,
+		&i.Market,
+	)
+	return i, err
+}
+
+const insertHoliday = `-- name: InsertHoliday :one
+INSERT INTO holidays (
+   date,
+   exchange,
+   name,
+   status
+) VALUES (
+  $1,
+  $2,
+  $3,
+  $4
+)
+RETURNING id, date, exchange, name, status
+`
+
+type InsertHolidayParams struct {
+	Date     time.Time      `json:"date"`
+	Exchange sql.NullString `json:"exchange"`
+	Name     sql.NullString `json:"name"`
+	Status   sql.NullString `json:"status"`
+}
+
+func (q *Queries) InsertHoliday(ctx context.Context, arg InsertHolidayParams) (Holiday, error) {
+	row := q.db.QueryRowContext(ctx, insertHoliday,
+		arg.Date,
+		arg.Exchange,
+		arg.Name,
+		arg.Status,
+	)
+	var i Holiday
+	err := row.Scan(
+		&i.ID,
+		&i.Date,
+		&i.Exchange,
+		&i.Name,
+		&i.Status,
 	)
 	return i, err
 }
