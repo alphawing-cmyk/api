@@ -111,7 +111,8 @@ func (s *ServiceHandler) kvEncrypt(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if user.Role == "SERVICE" {
+	fmt.Println(user.Role)
+	if user.Role == "service" {
 		message := map[string]interface{}{
 			"user_id": encryptBody.UserID,
 			"action":  "add",
