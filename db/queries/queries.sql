@@ -106,5 +106,5 @@ FROM kv;
 
 -- name: GetAllServices :many
 SELECT * FROM users
-WHERE service = 'SERVICE';
+WHERE role = 'service';
 

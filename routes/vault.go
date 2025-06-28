@@ -111,29 +111,13 @@ func (s *ServiceHandler) kvEncrypt(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fmt.Println(user.Role)
-	if user.Role == "service" {
-		message := map[string]interface{}{
-			"user_id": encryptBody.UserID,
-			"action":  "add",
-			"message": "Added a new key, service request updated credentials",
-		}
-
-		jsonMessage, err := json.Marshal(message)
-
-		if err != nil {
-			logging.ColorFatal(err)
-			http.Error(w, "Error converting data", http.StatusInternalServerError)
-			return
-		}
-
-		err = s.rdp.client.Publish(ctx, fmt.Sprintf("channel_%s", user.Username), jsonMessage).Err()
-		if err != nil {
-			logging.ColorFatal(err)
-			http.Error(w, "Failed to publish message to Redis", http.StatusInternalServerError)
-			return
-		}
+	// Publish to redis
+	message := map[string]interface{}{
+		"user_id": encryptBody.UserID,
+		"action":  "add",
+		"message": "Added a new key, service request updated credentials",
 	}
+	err = utils.PublishRedisMessage(s.rdp.client, user, fmt.Sprintf("channel_%s", user.Username), message)
 
 	data["key"] = encryptBody.Key
 	data["value"] = encryptBody.Value
@@ -180,7 +164,7 @@ func (s *ServiceHandler) kvDelete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err = s.db.queries.GetKvById(ctx, deleteItem.ID)
+	itemDeleted, err := s.db.queries.GetKvById(ctx, deleteItem.ID)
 	if err != nil {
 		logging.ColorFatal(err)
 		http.Error(w, "Could not retrieve kv record", http.StatusBadRequest)
@@ -194,6 +178,27 @@ func (s *ServiceHandler) kvDelete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Find user
+	user, err := s.db.queries.GetUserById(ctx, int32(itemDeleted.UserID))
+	if err != nil {
+		logging.ColorFatal(err)
+		http.Error(w, "User record not found", http.StatusBadRequest)
+		return
+	}
+
+	// publish to redis
+	message := map[string]interface{}{
+		"user_id": itemDeleted.UserID,
+		"key":     itemDeleted.Key,
+		"action":  "delete",
+		"message": "Deleted a key, service request updated credentials",
+	}
+	err = utils.PublishRedisMessage(s.rdp.client, user, fmt.Sprintf("channel_%s", user.Username), message)
+	if err != nil {
+		logging.ColorFatal(err)
+		http.Error(w, "Redis connection not working", http.StatusBadRequest)
+		return
+	}
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte("Successfully deleted record"))
 }
@@ -248,6 +253,29 @@ func (s *ServiceHandler) kvUpdate(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		logging.ColorFatal(err)
 		http.Error(w, "Could not update record", http.StatusBadRequest)
+		return
+	}
+
+	// Find user
+	user, err := s.db.queries.GetUserById(ctx, int32(updateItem.UserID))
+	if err != nil {
+		logging.ColorFatal(err)
+		http.Error(w, "User record not found", http.StatusBadRequest)
+		return
+	}
+
+	// Publish to redis
+	message := map[string]interface{}{
+		"user_id": updateItem.UserID,
+		"id":      updateItem.ID,
+		"key":     updateItem.Key,
+		"action":  "updated",
+		"message": "Updated an existing key, service request updated credentials",
+	}
+	err = utils.PublishRedisMessage(s.rdp.client, user, fmt.Sprintf("channel_%s", user.Username), message)
+	if err != nil {
+		logging.ColorFatal(err)
+		http.Error(w, "Redis connection not working", http.StatusBadRequest)
 		return
 	}
 

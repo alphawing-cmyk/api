@@ -6,6 +6,7 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/hex"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
@@ -143,5 +144,25 @@ func SetupRedisChannels(rdb *redis.Client, queries *db.Queries) error {
 			return err
 		}
 	}
+	return nil
+}
+
+func PublishRedisMessage(rdb *redis.Client, user db.User, channel string, message map[string]interface{}) error {
+	ctx := context.Background()
+	if user.Role == "service" {
+		jsonMessage, err := json.Marshal(message)
+
+		if err != nil {
+			logging.ColorFatal(err)
+			return err
+		}
+
+		err = rdb.Publish(ctx, fmt.Sprintf("channel_%s", user.Username), jsonMessage).Err()
+		if err != nil {
+			logging.ColorFatal(err)
+			return err
+		}
+	}
+
 	return nil
 }

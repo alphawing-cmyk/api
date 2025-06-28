@@ -46,6 +46,7 @@ func main() {
 		log.Fatalf("Invalid REDIS_RB value: %v", err)
 	}
 
+	// Setup redis instance
 	rdb := redis.NewClient(&redis.Options{
 		Addr:     os.Getenv("REDIS_URL"),
 		Password: os.Getenv("REDIS_PASSWORD"),
@@ -65,8 +66,13 @@ func main() {
 
 	defer dbConn.Close()
 	queries := db.New(dbConn)
-
 	defer dbConn.Close()
+
+	// Setup redis channels
+	err = utils.SetupRedisChannels(rdb, queries)
+	if err != nil {
+		panic(err)
+	}
 
 	router := routes.NewRouter(queries, rdb)
 	port := os.Getenv("API_PORT")

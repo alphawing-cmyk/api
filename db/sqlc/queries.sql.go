@@ -117,7 +117,7 @@ func (q *Queries) DeleteKvById(ctx context.Context, id int64) error {
 
 const getAllServices = `-- name: GetAllServices :many
 SELECT id, username, first_name, last_name, email, company, password, is_active, role, img_path, refresh_token, forgot_token FROM users
-WHERE service = 'SERVICE'
+WHERE role = 'service'
 `
 
 func (q *Queries) GetAllServices(ctx context.Context) ([]User, error) {
