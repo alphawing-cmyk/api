@@ -5,6 +5,7 @@ import (
 	"api/logging"
 	"context"
 	"crypto/rand"
+	"database/sql"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
@@ -165,4 +166,33 @@ func PublishRedisMessage(rdb *redis.Client, user db.User, channel string, messag
 	}
 
 	return nil
+}
+
+func NullToStr(ns sql.NullString) string {
+	if ns.Valid {
+		return ns.String
+	}
+	return ""
+}
+
+func ScheduleTask(task func(), period int, duration time.Duration) {
+	for {
+		now := time.Now()
+		nextRun := time.Date(
+			now.Year(),
+			now.Month(),
+			now.Day(),
+			now.Hour(),
+			now.Minute(),
+			now.Second(),
+			now.Nanosecond(),
+			now.Location())
+
+		if now.After(nextRun) {
+			nextRun = nextRun.Add(time.Duration(period) * duration)
+		}
+		time.Sleep(time.Until(nextRun))
+		task()
+		time.Sleep(time.Duration(period) * duration)
+	}
 }

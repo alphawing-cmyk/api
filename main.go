@@ -63,10 +63,7 @@ func main() {
 		panic(err)
 	}
 	fmt.Println("Connected to redis instance PING:", ping)
-
-	defer dbConn.Close()
 	queries := db.New(dbConn)
-	defer dbConn.Close()
 
 	// Setup redis channels
 	err = utils.SetupRedisChannels(rdb, queries)
@@ -74,8 +71,12 @@ func main() {
 		panic(err)
 	}
 
+	// Initialize tasks
+	InitializeTasks(queries)
+
 	router := routes.NewRouter(queries, rdb)
 	port := os.Getenv("API_PORT")
+	defer dbConn.Close()
 
 	if port != "" {
 		fmt.Printf("Running on http://localhost:%s\n", port)
@@ -90,24 +91,58 @@ func main() {
 
 }
 
-func scheduleTask(task func(), period int, duration time.Duration) {
-	for {
-		now := time.Now()
-		nextRun := time.Date(
-			now.Year(),
-			now.Month(),
-			now.Day(),
-			now.Hour(),
-			now.Minute(),
-			now.Second(),
-			now.Nanosecond(),
-			now.Location())
-
-		if now.After(nextRun) {
-			nextRun = nextRun.Add(time.Duration(period) * duration)
+func InitializeTasks(queries *db.Queries) {
+	go utils.ScheduleTask(func() {
+		exchanges, err := utils.PolygonFetchExchanges("stocks", os.Getenv("POLYGON_KEY"))
+		if err != nil {
+			logging.ColorFatal(err.Error())
+			return
 		}
-		time.Sleep(time.Until(nextRun))
-		task()
-		time.Sleep(time.Duration(period) * duration)
-	}
+		utils.PolygonStoreExchanges(*exchanges, queries)
+		log.Println("Exchanges updated.")
+	}, 24, time.Hour)
+
+	go utils.ScheduleTask(func() {
+		holidays, err := utils.PolygonFetchHolidays(os.Getenv("POLYGON_KEY"))
+		if err != nil {
+			logging.ColorFatal(err.Error())
+			return
+		}
+		utils.PolygonStoreHolidays(*holidays, queries)
+		log.Println("Holidays updated.")
+	}, 24, time.Hour)
+
+	go utils.ScheduleTask(func() {
+		// Store historical
+		ctx := context.Background()
+		tickers, err := queries.GetTickersByMarket(ctx, "STOCK")
+		if err != nil {
+			logging.ColorFatal(err.Error())
+			return
+		}
+
+		var symbols []string
+
+		for _, ticker := range tickers {
+			symbols = append(symbols, ticker.Symbol)
+		}
+
+		fmt.Println(symbols)
+
+		data, err := utils.PolygonFetchAggregateBarsAsync(
+			symbols,
+			1,
+			"minute",
+			time.Now().AddDate(0, 0, -1),
+			time.Now(),
+			os.Getenv("POLYGON_KEY"),
+		)
+
+		if err != nil {
+			logging.ColorFatal(err.Error())
+			return
+		}
+		utils.PolygonStoreAggregatedResults(data, queries)
+		log.Println("Historical data updated.")
+	}, 10, time.Minute)
 }
