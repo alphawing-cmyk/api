@@ -145,4 +145,38 @@ func InitializeTasks(queries *db.Queries) {
 		utils.PolygonStoreAggregatedResults(data, queries)
 		log.Println("Historical data updated.")
 	}, 10, time.Minute)
+
+	go utils.ScheduleTask(func() {
+		// Store historical
+		ctx := context.Background()
+		tickers, err := queries.GetTickersByMarket(ctx, "CRYPTO")
+		if err != nil {
+			logging.ColorFatal(err.Error())
+			return
+		}
+
+		var symbols []string
+
+		for _, ticker := range tickers {
+			symbols = append(symbols, ticker.Symbol)
+		}
+
+		fmt.Println(symbols)
+
+		data, err := utils.PolygonFetchAggregateBarsAsync(
+			symbols,
+			1,
+			"minute",
+			time.Now().AddDate(0, 0, -1),
+			time.Now(),
+			os.Getenv("POLYGON_KEY"),
+		)
+
+		if err != nil {
+			logging.ColorFatal(err.Error())
+			return
+		}
+		utils.PolygonStoreAggregatedResults(data, queries)
+		log.Println("Historical data updated.")
+	}, 10, time.Minute)
 }
