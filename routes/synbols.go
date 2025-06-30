@@ -25,6 +25,9 @@ func symbolRoutes(r *mux.Router, s *ServiceHandler) {
 	subrouter.Handle("/all",
 		middleware.RBAC(roles...)(http.HandlerFunc(s.getSymbols)),
 	).Methods("GET")
+	subrouter.Handle("/market",
+		middleware.RBAC(roles...)(http.HandlerFunc(s.getSymbolsByType)),
+	).Methods("GET")
 }
 
 type AltName struct {
@@ -44,9 +47,54 @@ type TickerDTO struct {
 
 func (s *ServiceHandler) getSymbols(w http.ResponseWriter, r *http.Request) {
 	ctx := context.Background()
-	tickers, err := s.db.queries.GetTickersByMarket(ctx, "STOCK")
+	tickers, err := s.db.queries.GetTickers(ctx)
 
-	var result []TickerDTO
+	result := make([]TickerDTO, 0)
+
+	for _, t := range tickers {
+		var altNames []AltName
+		if t.AltNames.Valid {
+			if err := json.Unmarshal(t.AltNames.RawMessage, &altNames); err != nil {
+				log.Printf("failed to unmarshal alt_names for symbol %s: %v", t.Symbol, err)
+				altNames = []AltName{
+					{Name: nil, Source: nil},
+				}
+			}
+		}
+
+		result = append(result, TickerDTO{
+			ID:        t.ID,
+			Symbol:    t.Symbol,
+			Name:      t.Name,
+			AltNames:  altNames,
+			Industry:  utils.NullToStr(t.Industry),
+			Market:    t.Market,
+			MarketCap: utils.NullToStr(t.MarketCap),
+		})
+	}
+	if err != nil {
+		http.Error(w, "Could not fetch tickers", http.StatusBadRequest)
+		return
+	}
+
+	jsonBody, err := json.Marshal(result)
+	if err != nil {
+		logging.ColorFatal(err)
+		http.Error(w, "Error converting data", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(jsonBody)
+}
+
+func (s *ServiceHandler) getSymbolsByType(w http.ResponseWriter, r *http.Request) {
+	market := r.URL.Query().Get("market")
+
+	ctx := context.Background()
+	tickers, err := s.db.queries.GetTickersByMarket(ctx, market)
+
+	result := make([]TickerDTO, 0)
 	for _, t := range tickers {
 		var altNames []AltName
 		if t.AltNames.Valid {
