@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/gorilla/mux"
 )
@@ -130,4 +131,71 @@ func (s *ServiceHandler) getSymbolsByType(w http.ResponseWriter, r *http.Request
 
 	w.Header().Set("Content-Type", "application/json")
 	w.Write(jsonBody)
+}
+
+type HistoricalDTO struct {
+	Timestamp    time.Time `json:"timestamp"`
+	Symbol       string    `json:"symbol"`
+	Open         float64   `json:"open"`
+	High         float64   `json:"high"`
+	Low          float64   `json:"low"`
+	Close        float64   `json:"close"`
+	AdjClose     float64   `json:"adj_close"`
+	Volume       int64     `json:"volume"`
+	VWAP         float64   `json:"vwap"`
+	Transactions int32     `json:"transactions"`
+	Source       string    `json:"source"`
+	Market       string    `json:"market"`
+}
+
+func (s *ServiceHandler) getHistoricalBySymbol(w http.ResponseWriter, r *http.Request) {
+	symbol := r.URL.Query().Get("symbol")
+	fromStr := r.URL.Query().Get("from")
+	toStr := r.URL.Query().Get("to")
+
+	if symbol == "" || fromStr == "" || toStr == "" {
+		http.Error(w, "Missing query parameters: symbol, from, to", http.StatusBadRequest)
+		return
+	}
+
+	from, err := time.Parse("2006-01-02", fromStr)
+	if err != nil {
+		http.Error(w, "Invalid 'from' format. Use YYYY-MM-DD", http.StatusBadRequest)
+		return
+	}
+
+	to, err := time.Parse("2006-01-02", toStr)
+	if err != nil {
+		http.Error(w, "Invalid 'to' format. Use YYYY-MM-DD", http.StatusBadRequest)
+		return
+	}
+
+	ctx := context.Background()
+	rows, err := s.db.queries.GetHistoricalBySymbolAndTimestampRange(ctx, symbol, from, to)
+	if err != nil {
+		log.Printf("Failed to fetch historical data for %s: %v", symbol, err)
+		http.Error(w, "Database error", http.StatusInternalServerError)
+		return
+	}
+
+	result := make([]HistoricalDTO, 0, len(rows))
+	for _, row := range rows {
+		result = append(result, HistoricalDTO{
+			Timestamp:    row.Timestamp,
+			Symbol:       row.Symbol,
+			Open:         row.Open,
+			High:         row.High,
+			Low:          row.Low,
+			Close:        row.Close,
+			AdjClose:     row.AdjClose,
+			Volume:       row.Volume,
+			VWAP:         row.Vwap,
+			Transactions: row.Transactions,
+			Source:       row.Source,
+			Market:       row.Market,
+		})
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(result)
 }
