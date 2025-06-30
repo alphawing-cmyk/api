@@ -161,22 +161,16 @@ func InitializeTasks(queries *db.Queries) {
 			symbols = append(symbols, ticker.Symbol)
 		}
 
+		fmt.Println("Crypto symbols are: ")
 		fmt.Println(symbols)
+		for _, ticker := range tickers {
+			historicalData, err := utils.KrakenGetOHCLInfo(ticker.Symbol)
 
-		data, err := utils.PolygonFetchAggregateBarsAsync(
-			symbols,
-			1,
-			"minute",
-			time.Now().AddDate(0, 0, -1),
-			time.Now(),
-			os.Getenv("POLYGON_KEY"),
-		)
-
-		if err != nil {
-			logging.ColorFatal(err.Error())
-			return
+			if err != nil {
+				continue
+			}
+			fmt.Println(historicalData.Result)
+			utils.StoreKrakenOHLCData(*historicalData, queries)
 		}
-		utils.PolygonStoreAggregatedResults(data, queries)
-		log.Println("Historical data updated.")
 	}, 10, time.Minute)
 }

@@ -366,7 +366,7 @@ func StoreKrakenOHLCData(results KrakenOHLCResponse, queries *db.Queries) {
 			Symbol:       ohlcv.Ticker,
 			Milliseconds: sql.NullInt64{Int64: int64(ohlcv.Milliseconds), Valid: true},
 			Duration:     sql.NullString{String: ohlcv.Duration, Valid: true},
-			Timestamp:    time.UnixMilli(int64(ohlcv.Milliseconds)),
+			Timestamp:    time.Unix(int64(ohlcv.Milliseconds), 0),
 			Open:         ohlcv.Open,
 			High:         ohlcv.High,
 			Low:          ohlcv.Low,
