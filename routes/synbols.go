@@ -159,15 +159,15 @@ func (s *ServiceHandler) getHistoricalBySymbol(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	from, err := time.Parse("2006-01-02", fromStr)
+	from, err := time.Parse(time.RFC3339, fromStr)
 	if err != nil {
-		http.Error(w, "Invalid 'from' format. Use YYYY-MM-DD", http.StatusBadRequest)
+		http.Error(w, "Invalid 'from' format. Use RFC3339 format: YYYY-MM-DDTHH:MM:SS±HH:MM", http.StatusBadRequest)
 		return
 	}
 
-	to, err := time.Parse("2006-01-02", toStr)
+	to, err := time.Parse(time.RFC3339, toStr)
 	if err != nil {
-		http.Error(w, "Invalid 'to' format. Use YYYY-MM-DD", http.StatusBadRequest)
+		http.Error(w, "Invalid 'to' format. Use RFC3339 format: YYYY-MM-DDTHH:MM:SS±HH:MM", http.StatusBadRequest)
 		return
 	}
 
@@ -206,3 +206,5 @@ func (s *ServiceHandler) getHistoricalBySymbol(w http.ResponseWriter, r *http.Re
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(result)
 }
+
+// Create a function that calculates whatever indicator is needed like MA
