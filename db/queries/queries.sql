@@ -197,7 +197,7 @@ INSERT INTO holidays (
 RETURNING *;
 
 -- name: GetHistoricalBySymbolAndTimestampRange :many
-SELECT timestamp, symbol, open, high, low, close, adj_close, volume, vwap, transactions, source, market
+SELECT *
 FROM historical
 WHERE symbol = $1 AND timestamp BETWEEN $2 AND $3
 ORDER BY timestamp ASC;

@@ -8,3 +8,9 @@ const (
 	DEMO    ServiceEnum = "ADMIN"
 	SERVICE ServiceEnum = "SERVICE"
 )
+
+var AllRoles = []ServiceEnum{
+	ServiceEnum("ADMIN"),
+	ServiceEnum("SERVICE"),
+	ServiceEnum("DEMO"),
+}

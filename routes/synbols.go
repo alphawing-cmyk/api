@@ -2,11 +2,13 @@ package routes
 
 import (
 	"api/constants"
+	db "api/db/sqlc"
 	"api/logging"
 	"api/middleware"
 	"api/utils"
 	"context"
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"time"
@@ -17,17 +19,14 @@ import (
 func symbolRoutes(r *mux.Router, s *ServiceHandler) {
 	subrouter := r.PathPrefix("/symbols").Subrouter()
 
-	roles := []constants.ServiceEnum{
-		constants.ServiceEnum("ADMIN"),
-		constants.ServiceEnum("SERVICE"),
-		constants.ServiceEnum("DEMO"),
-	}
-
 	subrouter.Handle("/all",
-		middleware.RBAC(roles...)(http.HandlerFunc(s.getSymbols)),
+		middleware.RBAC(constants.AllRoles...)(http.HandlerFunc(s.getSymbols)),
 	).Methods("GET")
 	subrouter.Handle("/market",
-		middleware.RBAC(roles...)(http.HandlerFunc(s.getSymbolsByType)),
+		middleware.RBAC(constants.AllRoles...)(http.HandlerFunc(s.getSymbolsByType)),
+	).Methods("GET")
+	subrouter.Handle("/historical/symbol",
+		middleware.RBAC(constants.AllRoles...)(http.HandlerFunc(s.getHistoricalBySymbol)),
 	).Methods("GET")
 }
 
@@ -136,13 +135,13 @@ func (s *ServiceHandler) getSymbolsByType(w http.ResponseWriter, r *http.Request
 type HistoricalDTO struct {
 	Timestamp    time.Time `json:"timestamp"`
 	Symbol       string    `json:"symbol"`
-	Open         float64   `json:"open"`
-	High         float64   `json:"high"`
-	Low          float64   `json:"low"`
-	Close        float64   `json:"close"`
-	AdjClose     float64   `json:"adj_close"`
-	Volume       int64     `json:"volume"`
-	VWAP         float64   `json:"vwap"`
+	Open         *float64  `json:"open"`
+	High         *float64  `json:"high"`
+	Low          *float64  `json:"low"`
+	Close        *float64  `json:"close"`
+	AdjClose     *float64  `json:"adj_close"`
+	Volume       *int64    `json:"volume"`
+	VWAP         *float64  `json:"vwap"`
 	Transactions int32     `json:"transactions"`
 	Source       string    `json:"source"`
 	Market       string    `json:"market"`
@@ -152,6 +151,8 @@ func (s *ServiceHandler) getHistoricalBySymbol(w http.ResponseWriter, r *http.Re
 	symbol := r.URL.Query().Get("symbol")
 	fromStr := r.URL.Query().Get("from")
 	toStr := r.URL.Query().Get("to")
+
+	log.Printf("Received historical data request — symbol: %s, from: %s, to: %s", symbol, fromStr, toStr)
 
 	if symbol == "" || fromStr == "" || toStr == "" {
 		http.Error(w, "Missing query parameters: symbol, from, to", http.StatusBadRequest)
@@ -171,7 +172,12 @@ func (s *ServiceHandler) getHistoricalBySymbol(w http.ResponseWriter, r *http.Re
 	}
 
 	ctx := context.Background()
-	rows, err := s.db.queries.GetHistoricalBySymbolAndTimestampRange(ctx, symbol, from, to)
+	params := db.GetHistoricalBySymbolAndTimestampRangeParams{
+		Symbol:      symbol,
+		Timestamp:   from,
+		Timestamp_2: to,
+	}
+	rows, err := s.db.queries.GetHistoricalBySymbolAndTimestampRange(ctx, params)
 	if err != nil {
 		log.Printf("Failed to fetch historical data for %s: %v", symbol, err)
 		http.Error(w, "Database error", http.StatusInternalServerError)
@@ -179,18 +185,19 @@ func (s *ServiceHandler) getHistoricalBySymbol(w http.ResponseWriter, r *http.Re
 	}
 
 	result := make([]HistoricalDTO, 0, len(rows))
+	fmt.Printf("The number of rows is %d\n", len(rows))
 	for _, row := range rows {
 		result = append(result, HistoricalDTO{
 			Timestamp:    row.Timestamp,
 			Symbol:       row.Symbol,
-			Open:         row.Open,
-			High:         row.High,
-			Low:          row.Low,
-			Close:        row.Close,
-			AdjClose:     row.AdjClose,
-			Volume:       row.Volume,
-			VWAP:         row.Vwap,
-			Transactions: row.Transactions,
+			Open:         utils.StringToFloat(row.Open),
+			High:         utils.StringToFloat(row.High),
+			Low:          utils.StringToFloat(row.Low),
+			Close:        utils.StringToFloat(row.Close),
+			AdjClose:     utils.StringToFloat(row.AdjClose.String),
+			Volume:       utils.StringToInt64(row.Volume.String),
+			VWAP:         utils.StringToFloat(row.Vwap.String),
+			Transactions: row.Transactions.Int32,
 			Source:       row.Source,
 			Market:       row.Market,
 		})

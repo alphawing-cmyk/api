@@ -12,6 +12,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strconv"
 	"time"
 
 	"github.com/go-playground/validator/v10"
@@ -173,6 +174,37 @@ func NullToStr(ns sql.NullString) string {
 		return ns.String
 	}
 	return ""
+}
+
+func StringToFloat(ns string) *float64 {
+	floatVal, err := strconv.ParseFloat(ns, 64)
+
+	if err != nil {
+		return nil
+	}
+	return &floatVal
+}
+
+func StringToInt32(ns string) *int32 {
+	intVal, err := strconv.ParseInt(ns, 10, 32)
+
+	if err != nil {
+		return nil
+	}
+
+	result := int32(intVal)
+	return &result
+}
+
+func StringToInt64(ns string) *int64 {
+	intVal, err := strconv.ParseInt(ns, 10, 64)
+
+	if err != nil {
+		return nil
+	}
+
+	result := int64(intVal)
+	return &result
 }
 
 func ScheduleTask(task func(), period int, duration time.Duration) {
