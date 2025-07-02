@@ -201,3 +201,8 @@ SELECT *
 FROM historical
 WHERE symbol = $1 AND timestamp BETWEEN $2 AND $3
 ORDER BY timestamp ASC;
+
+-- name: GetTickerBySymbolAndMarket :one
+SELECT *
+FROM tickers
+WHERE symbol = $1 AND name = $2;

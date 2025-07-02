@@ -412,6 +412,32 @@ func (q *Queries) GetRoles(ctx context.Context) ([]string, error) {
 	return items, nil
 }
 
+const getTickerBySymbolAndMarket = `-- name: GetTickerBySymbolAndMarket :one
+SELECT id, symbol, name, alt_names, industry, market, market_cap
+FROM tickers
+WHERE symbol = $1 AND name = $2
+`
+
+type GetTickerBySymbolAndMarketParams struct {
+	Symbol string `json:"symbol"`
+	Name   string `json:"name"`
+}
+
+func (q *Queries) GetTickerBySymbolAndMarket(ctx context.Context, arg GetTickerBySymbolAndMarketParams) (Ticker, error) {
+	row := q.db.QueryRowContext(ctx, getTickerBySymbolAndMarket, arg.Symbol, arg.Name)
+	var i Ticker
+	err := row.Scan(
+		&i.ID,
+		&i.Symbol,
+		&i.Name,
+		&i.AltNames,
+		&i.Industry,
+		&i.Market,
+		&i.MarketCap,
+	)
+	return i, err
+}
+
 const getTickers = `-- name: GetTickers :many
 SELECT id, symbol, name, alt_names, industry, market, market_cap FROM tickers
 `

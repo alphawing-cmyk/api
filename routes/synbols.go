@@ -208,3 +208,15 @@ func (s *ServiceHandler) getHistoricalBySymbol(w http.ResponseWriter, r *http.Re
 }
 
 // Create a function that calculates whatever indicator is needed like MA
+func calcStrategy(
+	strategy string, 
+	data []HistoricalDTO
+) error {
+
+	switch {
+	case strategy == "MA":
+		closingPrices := make([]float64, len(rows))
+		return nil
+	}
+
+}
