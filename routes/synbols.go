@@ -28,6 +28,9 @@ func symbolRoutes(r *mux.Router, s *ServiceHandler) {
 	subrouter.Handle("/historical/symbol",
 		middleware.RBAC(constants.AllRoles...)(http.HandlerFunc(s.getHistoricalBySymbol)),
 	).Methods("GET")
+	subrouter.Handle("/strategy/calcualte",
+		middleware.RBAC(constants.AllRoles...)(http.HandlerFunc(s.calculateStrategyData)),
+	).Methods("POST")
 }
 
 type AltName struct {
@@ -208,15 +211,66 @@ func (s *ServiceHandler) getHistoricalBySymbol(w http.ResponseWriter, r *http.Re
 }
 
 // Create a function that calculates whatever indicator is needed like MA
+
+type StrategyBody struct {
+	Strategy string          `json:"strategy" validate:"required"`
+	FromStr  string          `json:"from" validate:"required"`
+	ToStr    string          `json:"to" validate:"required"`
+	Params   json.RawMessage `json:"params" validate:"required"`
+}
+
+func (s *ServiceHandler) calculateStrategyData(w http.ResponseWriter, r *http.Request) {
+	symbol := r.URL.Query().Get("symbol")
+	fromStr := r.URL.Query().Get("from")
+	toStr := r.URL.Query().Get("to")
+
+	log.Printf("Received historical data request — symbol: %s, from: %s, to: %s", symbol, fromStr, toStr)
+
+	if symbol == "" || fromStr == "" || toStr == "" {
+		http.Error(w, "Missing query parameters: symbol, from, to", http.StatusBadRequest)
+		return
+	}
+
+	from, err := time.Parse(time.RFC3339, fromStr)
+	if err != nil {
+		http.Error(w, "Invalid 'from' format. Use RFC3339 format: YYYY-MM-DDTHH:MM:SS±HH:MM", http.StatusBadRequest)
+		return
+	}
+
+	to, err := time.Parse(time.RFC3339, toStr)
+	if err != nil {
+		http.Error(w, "Invalid 'to' format. Use RFC3339 format: YYYY-MM-DDTHH:MM:SS±HH:MM", http.StatusBadRequest)
+		return
+	}
+
+	ctx := context.Background()
+	params := db.GetHistoricalBySymbolAndTimestampRangeParams{
+		Symbol:      symbol,
+		Timestamp:   from,
+		Timestamp_2: to,
+	}
+	rows, err := s.db.queries.GetHistoricalBySymbolAndTimestampRange(ctx, params)
+	if err != nil {
+		log.Printf("Failed to fetch historical data for %s: %v", symbol, err)
+		http.Error(w, "Database error", http.StatusInternalServerError)
+		return
+	}
+}
+
 func calcStrategy(
-	strategy string, 
-	data []HistoricalDTO
-) error {
+	strategy string,
+	data []db.Historical,
+) ([]float64, error) {
 
 	switch {
 	case strategy == "MA":
-		closingPrices := make([]float64, len(rows))
-		return nil
+		results, err := utils.MA(data, 14)
+
+		if err != nil {
+			return nil, err
+		}
+		return results, nil
 	}
 
+	return nil, nil
 }
