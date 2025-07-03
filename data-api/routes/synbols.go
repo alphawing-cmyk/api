@@ -13,6 +13,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/go-playground/validator/v10"
 	"github.com/gorilla/mux"
 )
 
@@ -216,45 +217,74 @@ type StrategyBody struct {
 	Strategy string          `json:"strategy" validate:"required"`
 	FromStr  string          `json:"from" validate:"required"`
 	ToStr    string          `json:"to" validate:"required"`
-	Params   json.RawMessage `json:"params" validate:"required"`
+	Symbol   string          `json:"symbol" validate:"required"`
+	Params   json.RawMessage `json:"params" validate:"required"` // can be parsed per-strategy
 }
 
 func (s *ServiceHandler) calculateStrategyData(w http.ResponseWriter, r *http.Request) {
-	symbol := r.URL.Query().Get("symbol")
-	fromStr := r.URL.Query().Get("from")
-	toStr := r.URL.Query().Get("to")
+	var validator = validator.New()
+	var strategyBody StrategyBody
 
-	log.Printf("Received historical data request — symbol: %s, from: %s, to: %s", symbol, fromStr, toStr)
-
-	if symbol == "" || fromStr == "" || toStr == "" {
-		http.Error(w, "Missing query parameters: symbol, from, to", http.StatusBadRequest)
-		return
-	}
-
-	from, err := time.Parse(time.RFC3339, fromStr)
+	// Decode request body
+	err := json.NewDecoder(r.Body).Decode(&strategyBody)
 	if err != nil {
-		http.Error(w, "Invalid 'from' format. Use RFC3339 format: YYYY-MM-DDTHH:MM:SS±HH:MM", http.StatusBadRequest)
+		http.Error(w, "Invalid JSON body: "+err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	to, err := time.Parse(time.RFC3339, toStr)
+	// Validate request
+	validationErrors := utils.ValidationErrors(validator, strategyBody)
+	if validationErrors != nil {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"message": "Validation failed",
+			"errors":  validationErrors,
+		})
+		return
+	}
+
+	// Parse time
+	from, err := time.Parse(time.RFC3339, strategyBody.FromStr)
 	if err != nil {
-		http.Error(w, "Invalid 'to' format. Use RFC3339 format: YYYY-MM-DDTHH:MM:SS±HH:MM", http.StatusBadRequest)
+		http.Error(w, "Invalid 'from' format. Use RFC3339 format", http.StatusBadRequest)
 		return
 	}
 
+	to, err := time.Parse(time.RFC3339, strategyBody.ToStr)
+	if err != nil {
+		http.Error(w, "Invalid 'to' format. Use RFC3339 format", http.StatusBadRequest)
+		return
+	}
+
+	// Fetch historical data
 	ctx := context.Background()
 	params := db.GetHistoricalBySymbolAndTimestampRangeParams{
-		Symbol:      symbol,
+		Symbol:      strategyBody.Symbol,
 		Timestamp:   from,
 		Timestamp_2: to,
 	}
+
 	rows, err := s.db.queries.GetHistoricalBySymbolAndTimestampRange(ctx, params)
 	if err != nil {
-		log.Printf("Failed to fetch historical data for %s: %v", symbol, err)
+		log.Printf("Failed to fetch historical data for %s: %v", strategyBody.Symbol, err)
 		http.Error(w, "Database error", http.StatusInternalServerError)
 		return
 	}
+
+	// Call calcStrategy
+	calcData, err := calcStrategy(strategyBody.Strategy, rows)
+	if err != nil {
+		http.Error(w, "Failed to calculate strategy: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	// Return result
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"symbol": strategyBody.Symbol,
+		"data":   calcData,
+	})
 }
 
 func calcStrategy(
