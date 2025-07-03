@@ -29,7 +29,7 @@ func symbolRoutes(r *mux.Router, s *ServiceHandler) {
 	subrouter.Handle("/historical/symbol",
 		middleware.RBAC(constants.AllRoles...)(http.HandlerFunc(s.getHistoricalBySymbol)),
 	).Methods("GET")
-	subrouter.Handle("/strategy/calcualte",
+	subrouter.Handle("/strategy/calculate",
 		middleware.RBAC(constants.AllRoles...)(http.HandlerFunc(s.calculateStrategyData)),
 	).Methods("POST")
 }
@@ -218,7 +218,7 @@ type StrategyBody struct {
 	FromStr  string          `json:"from" validate:"required"`
 	ToStr    string          `json:"to" validate:"required"`
 	Symbol   string          `json:"symbol" validate:"required"`
-	Params   json.RawMessage `json:"params" validate:"required"` // can be parsed per-strategy
+	Params   json.RawMessage `json:"params" validate:"required"`
 }
 
 func (s *ServiceHandler) calculateStrategyData(w http.ResponseWriter, r *http.Request) {
