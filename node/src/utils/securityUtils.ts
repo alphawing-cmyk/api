@@ -1,58 +1,13 @@
-import { FastifySchemaValidationError } from "fastify/types/schema.ts";
+import { UserInfo } from "../types/auth.ts";
 import jwt, { JwtPayload } from "jsonwebtoken";
-import { RoleEnum } from "../types/enums.js";
+import { VerifyResult, RemixClaims } from "@/types";
 import { createCipheriv, randomBytes, createDecipheriv } from "crypto";
+import { GetTokenType } from "@/types";
 import { FastifyRequest } from "fastify";
 import prisma from "./prisma.ts";
 
 
-
-
-
-
-
-const verifyJwtToken = (token: string): VerifyResult => {
-  try {
-    const result = jwt.verify(token, process.env.JWT_SECRET as string);
-    return { valid: true, claims: result as JwtPayload | string };
-  } catch (err) {
-    console.log(err);
-    return { valid: false, claims: null };
-  }
-};
-
-
-
-const verifyJwtTokenFromRemixCookie = (
-  token: string | undefined,
-  secret: string
-): RemixClaims => {
-  if (!token) {
-    return { valid: true, claims: {} };
-  }
-
-  try {
-    let result = Buffer.from(token, "base64url").toString("utf-8");
-    result = JSON.parse(result);
-    return { valid: true, claims: result };
-  } catch (err) {
-    console.log(err);
-    return { valid: false, claims: {} };
-  }
-};
-
-const isJwtPayload = (obj: any): obj is JwtPayload => {
-  return (
-    obj &&
-    typeof obj === "object" &&
-    "claims" in obj &&
-    typeof obj.claims === "object" &&
-    "id" in obj.claims &&
-    typeof obj.claims.id === "number"
-  );
-};
-
-const encrypt = (text: string) => {
+export const encrypt = (text: string) => {
   const iv = randomBytes(16);
   const key = Buffer.from(process.env.AES_256_SECRET as string, "hex");
   const cipher = createCipheriv("aes-256-cbc", key, iv);
@@ -61,7 +16,7 @@ const encrypt = (text: string) => {
   return iv.toString("hex") + ":" + encrypted;
 };
 
-const decrypt = (encryptedText: string): string => {
+export const decrypt = (encryptedText: string): string => {
   const textParts = encryptedText.split(":");
   const shiftedPart = textParts.shift();
 
@@ -80,13 +35,74 @@ const decrypt = (encryptedText: string): string => {
   return decrypted.toString();
 };
 
-interface GetTokenType {
-  accessToken: string | null | undefined;
-  refreshToken: string | null | undefined;
-  claims: JwtPayload | null | undefined | string | object;
-}
+export const generateJwtKeys = (user: UserInfo) => {
+  try {
+    const { sign } = jwt;
+    const accessToken = sign(
+      { id: user.id, role: user.role },
+      process.env.JWT_SECRET ?? "",
+      {
+        expiresIn:
+          parseInt(process.env.ACCESS_TOKEN_EXPIRE_MINUTES || "10") * 60,
+      }
+    );
 
-const getToken = (request: FastifyRequest): GetTokenType => {
+    const refreshToken = sign(
+      { id: user.id, role: user.role },
+      process.env.JWT_SECRET ?? "",
+      {
+        expiresIn:
+          parseInt(process.env.REFRESH_TOKEN_EXPIRE_MINUTES || "10080") * 60,
+      }
+    );
+
+    return { accessToken, refreshToken };
+  } catch (err) {
+    throw new Error(err as string);
+  }
+};
+
+export const verifyJwtTokenFromRemixCookie = (
+  token: string | undefined,
+  secret: string
+): RemixClaims => {
+  if (!token) {
+    return { valid: true, claims: {} };
+  }
+
+  try {
+    let result = Buffer.from(token, "base64url").toString("utf-8");
+    result = JSON.parse(result);
+    return { valid: true, claims: result };
+  } catch (err) {
+    console.log(err);
+    return { valid: false, claims: {} };
+  }
+};
+
+export const isJwtPayload = (obj: any): obj is JwtPayload => {
+  return (
+    obj &&
+    typeof obj === "object" &&
+    "claims" in obj &&
+    typeof obj.claims === "object" &&
+    "id" in obj.claims &&
+    typeof obj.claims.id === "number"
+  );
+};
+
+export const verifyJwtToken = (token: string): VerifyResult => {
+  try {
+    const result = jwt.verify(token, process.env.JWT_SECRET as string);
+    return { valid: true, claims: result as JwtPayload | string };
+  } catch (err) {
+    console.log(err);
+    return { valid: false, claims: null };
+  }
+};
+
+
+export const getToken = (request: FastifyRequest): GetTokenType => {
   let accessToken;
   let refreshToken;
 
@@ -128,7 +144,8 @@ const getToken = (request: FastifyRequest): GetTokenType => {
   return { accessToken: null, refreshToken: null, claims: null };
 };
 
-const findUser = async (request: FastifyRequest | undefined, id?: number) => {
+
+export const findUser = async (request: FastifyRequest | undefined, id?: number) => {
   if (id) {
     const user = await prisma.user.findFirst({ where: { id: id } });
     return user;
@@ -153,16 +170,4 @@ const findUser = async (request: FastifyRequest | undefined, id?: number) => {
   }
 
   return undefined;
-};
-
-export {
-  createErrorMessage,
-  generateJwtKeys,
-  verifyJwtToken,
-  verifyJwtTokenFromRemixCookie,
-  isJwtPayload,
-  encrypt,
-  decrypt,
-  getToken,
-  findUser,
 };

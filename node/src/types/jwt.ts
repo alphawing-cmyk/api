@@ -17,3 +17,9 @@ export interface RemixClaims {
         email: string;
       };
 }
+
+export interface GetTokenType {
+  accessToken: string | null | undefined;
+  refreshToken: string | null | undefined;
+  claims: JwtPayload | null | undefined | string | object;
+}
