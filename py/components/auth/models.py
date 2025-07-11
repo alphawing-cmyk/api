@@ -23,7 +23,7 @@ class User(Base):
     company: Mapped[Optional[str]]                                 = mapped_column(String(255), nullable=True)
     password: Mapped[str]                                          = mapped_column(String(255))
     is_active: Mapped[Optional[bool]]                              = mapped_column(Boolean(), nullable=True)
-    role: Mapped[Role]                                             = mapped_column(SAENUM(Role), nullable=False)
+    role: Mapped[Role]                                             = mapped_column(SAENUM(Role, name="Role"), nullable=False)
     img_path: Mapped[Optional[str]]                                = mapped_column(Text)
     refresh_token: Mapped[Optional[str]]                           = mapped_column(String(255))
     forgot_token: Mapped[Optional[str]]                            = mapped_column(String(255))

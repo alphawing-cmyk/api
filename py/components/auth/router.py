@@ -5,9 +5,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from .utils import RBAChecker, ValidateJWT, generate_jwt_keys
 from fastapi_pagination import Page
 from fastapi_pagination.ext.sqlalchemy import paginate
-from sqlalchemy import select, update
+from sqlalchemy import select, update, or_
 from sqlalchemy.orm import joinedload, selectinload
-from .schamas import UserSchema, LoginBody
+from .schemas import UserSchema, LoginBody, RegisterBody
 from .models import User
 import bcrypt
 from components.utils import get_cookie_options
@@ -66,6 +66,61 @@ async def login(data: LoginBody, session: AsyncSession = Depends(get_session)):
     response.set_cookie(key="accessToken", value=keys["accessToken"], **get_cookie_options())
     response.set_cookie(key="refreshToken", value=keys["refreshToken"], **get_cookie_options())
     return response
+
+
+
+
+@router.post("/register")
+@router.post("/register")
+async def register(
+    data: RegisterBody, 
+    session: AsyncSession = Depends(get_session)
+):
+    try:
+        # === Check if user already exists ===
+        query = select(User).where(or_(User.username == data.username, User.email == data.email))
+        result = await session.execute(query)
+        existing_user = result.scalar_one_or_none()
+
+        if existing_user:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail={"success": False, "error": "User already exists"}
+            )
+
+        # === Hash password and create new user ===
+        hashed_password = bcrypt.hashpw(data.password.encode(), bcrypt.gensalt()).decode("utf-8")
+        new_user = User(
+            username=data.username,
+            first_name=data.firstName,
+            last_name=data.lastName,
+            email=data.email,
+            company=data.company,
+            password=hashed_password,
+            is_active=data.isActive,
+            role=data.role.name,
+            img_path=data.imgPath
+        )
+
+        session.add(new_user)
+        await session.commit()
+
+        # === Prepare response without sensitive fields ===
+        user_dict = data.model_dump()
+        user_dict.pop("password", None)
+        user_dict.pop("confirmPassword", None)
+
+        return JSONResponse(
+            status_code=status.HTTP_200_OK,
+            content={"success": True, "data": user_dict}
+        )
+
+    except Exception as e:
+        print(e)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={"success": False, "error": str(e)}
+        )
 
 @router.get(
     "/users", 

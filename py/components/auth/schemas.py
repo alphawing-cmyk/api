@@ -1,6 +1,6 @@
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, model_validator
 from enum import Enum
-from typing import Optional, List
+from typing import Optional, List, Self
 from datetime import datetime
 
 class Role(str, Enum):
@@ -34,3 +34,21 @@ class UserSchema(BaseModel):
 class LoginBody(BaseModel):
     username: str
     password: str
+
+class RegisterBody(BaseModel):
+    username: str
+    firstName: str
+    lastName: str
+    email: EmailStr
+    company: Optional[str] = None
+    password: str
+    confirmPassword: str
+    isActive: Optional[bool] = True
+    role: Role = Role.demo
+    imgPath: Optional[str] = None
+
+    @model_validator(mode='after')
+    def passwords_match(self) -> Self:
+        if self.password != self.confirmPassword:
+            raise ValueError("Passwords do not match")
+        return self
