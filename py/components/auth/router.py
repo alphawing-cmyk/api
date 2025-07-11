@@ -19,9 +19,9 @@ router = APIRouter()
     "/login",
 )
 async def login(data: LoginBody, session: AsyncSession = Depends(get_session)):
-    query       = select(User).where(User.username == data.username)
-    result      = await session.execute(query)
-    user        = result.scalar_one_or_none()
+    query = select(User).where(User.username == data.username)
+    result = await session.execute(query)
+    user = result.scalar_one_or_none()
 
     if not user:
         raise HTTPException(
@@ -30,7 +30,12 @@ async def login(data: LoginBody, session: AsyncSession = Depends(get_session)):
         )
     
     isValid = bcrypt.checkpw(data.password.encode(), user.password.encode())
-    userRole = user.role.value
+    
+    # Load the role and email attributes explicitly before committing
+    user_role = user.role.value
+    user_email = user.email 
+    user_username = user.username
+    
     if not isValid:
         raise HTTPException(
             status_code=401,
@@ -39,20 +44,21 @@ async def login(data: LoginBody, session: AsyncSession = Depends(get_session)):
     
     keys = generate_jwt_keys(user)
     salt = bcrypt.gensalt()
-    encryptedRefresh = bcrypt.hashpw(keys['refreshToken'].encode(),salt=salt)
-    stmt = update(User).where(User.id == user.id).values(refresh_token = encryptedRefresh.decode("utf-8"))
+    encryptedRefresh = bcrypt.hashpw(keys['refreshToken'].encode(), salt=salt)
+    
+    stmt = update(User).where(User.id == user.id).values(refresh_token=encryptedRefresh.decode("utf-8"))
     await session.execute(stmt)
-    await session.commit() 
+    await session.commit()
 
     response_data = {
         "success": True,
         "message": "Successfully logged in.",
         "data": {
-            "role": userRole,
+            "role": user_role,
             "accessToken": keys["accessToken"],
             "refreshToken": keys["refreshToken"],
-            "email": user.email,
-            "username": user.username,
+            "email": user_email,
+            "username": user_username,
         }
     }
 
@@ -60,7 +66,6 @@ async def login(data: LoginBody, session: AsyncSession = Depends(get_session)):
     response.set_cookie(key="accessToken", value=keys["accessToken"], **get_cookie_options())
     response.set_cookie(key="refreshToken", value=keys["refreshToken"], **get_cookie_options())
     return response
-
 
 @router.get(
     "/users", 
