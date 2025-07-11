@@ -29,3 +29,15 @@ def decrypt(encrypted_text: str) -> str:
     unpadder       = padding.PKCS7(128).unpadder()
     decrypted      = unpadder.update(decrypted) + unpadder.finalize()
     return decrypted.decode('UTF-8')
+
+def get_cookie_options():
+    is_production = settings.env == "PRODUCTION"
+
+    return {
+        "httponly": True,
+        "secure": is_production,
+        "samesite": "lax" if is_production else "none",
+        "path": "/",
+        "max_age": 3600 * 24 * 1,
+        "domain": "alphawing.com" if is_production else None,
+    }

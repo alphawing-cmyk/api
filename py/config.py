@@ -1,7 +1,9 @@
 from pydantic_settings import BaseSettings
 
 class Settings(BaseSettings):
-
+    # env
+    env: str | None = "dev"
+    
     # Database
     db_name: str | None = None
     db_user: str | None = None

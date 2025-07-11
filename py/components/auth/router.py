@@ -1,14 +1,16 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.responses import JSONResponse
 from components.database import get_session
 from sqlalchemy.ext.asyncio import AsyncSession
 from .utils import RBAChecker, ValidateJWT, generate_jwt_keys
 from fastapi_pagination import Page
 from fastapi_pagination.ext.sqlalchemy import paginate
-from sqlalchemy import select
+from sqlalchemy import select, update
 from sqlalchemy.orm import joinedload, selectinload
 from .schamas import UserSchema, LoginBody
 from .models import User
 import bcrypt
+from components.utils import get_cookie_options
 
 router = APIRouter()
 
@@ -28,7 +30,7 @@ async def login(data: LoginBody, session: AsyncSession = Depends(get_session)):
         )
     
     isValid = bcrypt.checkpw(data.password.encode(), user.password.encode())
-
+    userRole = user.role.value
     if not isValid:
         raise HTTPException(
             status_code=401,
@@ -36,8 +38,28 @@ async def login(data: LoginBody, session: AsyncSession = Depends(get_session)):
         )
     
     keys = generate_jwt_keys(user)
-    print(keys)
-    return 200
+    salt = bcrypt.gensalt()
+    encryptedRefresh = bcrypt.hashpw(keys['refreshToken'].encode(),salt=salt)
+    stmt = update(User).where(User.id == user.id).values(refresh_token = encryptedRefresh.decode("utf-8"))
+    await session.execute(stmt)
+    await session.commit() 
+
+    response_data = {
+        "success": True,
+        "message": "Successfully logged in.",
+        "data": {
+            "role": userRole,
+            "accessToken": keys["accessToken"],
+            "refreshToken": keys["refreshToken"],
+            "email": user.email,
+            "username": user.username,
+        }
+    }
+
+    response = JSONResponse(content=response_data, status_code=status.HTTP_200_OK)
+    response.set_cookie(key="accessToken", value=keys["accessToken"], **get_cookie_options())
+    response.set_cookie(key="refreshToken", value=keys["refreshToken"], **get_cookie_options())
+    return response
 
 
 @router.get(
