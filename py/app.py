@@ -5,6 +5,7 @@ from contextlib import asynccontextmanager
 from typing import AsyncGenerator
 from config import settings
 from redis import Redis
+from components.auth.router import router as auth_router
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator:
@@ -39,6 +40,13 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+)
+
+
+app.include_router(
+    auth_router,
+    prefix="",
+    tags=["Auth"],
 )
 
 
