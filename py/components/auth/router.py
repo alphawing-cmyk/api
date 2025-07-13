@@ -2,15 +2,16 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import JSONResponse
 from components.database import get_session
 from sqlalchemy.ext.asyncio import AsyncSession
-from .utils import RBAChecker, ValidateJWT, generate_jwt_keys
+from .utils import RBAChecker, ValidateJWT, generate_jwt_keys, forgotToken
 from fastapi_pagination import Page
 from fastapi_pagination.ext.sqlalchemy import paginate
 from sqlalchemy import select, update, or_
 from sqlalchemy.orm import joinedload, selectinload
-from .schemas import UserSchema, LoginBody, RegisterBody
+from .schemas import UserSchema, LoginBody, RegisterBody, ForgotPasswordBody
 from .models import User
 import bcrypt
 from components.utils import get_cookie_options
+from components.services.emailer import Emailer
 
 router = APIRouter()
 
@@ -71,7 +72,6 @@ async def login(data: LoginBody, session: AsyncSession = Depends(get_session)):
 
 
 @router.post("/register")
-@router.post("/register")
 async def register(
     data: RegisterBody, 
     session: AsyncSession = Depends(get_session)
@@ -121,6 +121,45 @@ async def register(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail={"success": False, "error": str(e)}
         )
+
+@router.post("/forgot")
+async def forgot_password(
+    data: ForgotPasswordBody,
+    session: AsyncSession = Depends(get_session)
+):
+    try:
+        # === Check if user exists ===
+        result = await session.execute(select(User).where(User.email == data.email))
+        user = result.scalar_one_or_none()
+
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail={"success": False, "error": "Email not found"}
+            )
+
+        # === Generate token and send email ===
+        res = await forgotToken(data.email, session=session) 
+        reset_link = f"{data.origin}/reset/{res['token']}"
+        print(reset_link)
+
+        emailer = Emailer()
+        emailer.generate_password_reset([data.email], reset_link)
+
+        return JSONResponse(
+            status_code=status.HTTP_200_OK,
+            content={"success": True, "message": "Successfully processed"}
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(e)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={"success": False, "error": "Could not process, please try again"}
+        )
+    
 
 @router.get(
     "/users", 

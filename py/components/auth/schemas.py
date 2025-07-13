@@ -52,3 +52,7 @@ class RegisterBody(BaseModel):
         if self.password != self.confirmPassword:
             raise ValueError("Passwords do not match")
         return self
+    
+class ForgotPasswordBody(BaseModel):
+    email: str
+    origin: str

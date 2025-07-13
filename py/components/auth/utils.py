@@ -2,6 +2,8 @@ from fastapi import Request, HTTPException, Depends, status
 import jwt
 import base64
 import json
+import secrets
+import datetime as dt
 from config import settings
 from typing import List, Optional
 from .models import User, UserPermission, Permission
@@ -125,3 +127,25 @@ def generate_jwt_keys(user: User) -> dict:
 
     except Exception as e:
         raise RuntimeError(f"JWT generation failed: {e}")
+
+
+async def forgotToken(
+    email: str, 
+    session: AsyncSession
+):
+    query      = select(User).where(User.email == email)
+    res        = await session.execute(query)
+    user       = res.scalar_one_or_none()
+    token      = secrets.token_hex(32)
+    expires_at = datetime.utcnow() + timedelta(hours=1)
+
+    if user:
+        user.forgot_token = token
+        session.add(user)
+        await session.commit()
+    
+
+    return {'token': token, 'expiresAt': expires_at}
+    
+        
+    
