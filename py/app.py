@@ -6,7 +6,7 @@ from typing import AsyncGenerator
 from config import settings
 from redis import Redis
 from components.auth.router import router as auth_router
-from components.tickers.router import router as tickers_router
+from components.symbols.router import router as symbols_router
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator:
@@ -51,9 +51,9 @@ app.include_router(
 )
 
 app.include_router(
-    tickers_router,
-    prefix="/ticker",
-    tags=["Auth"],
+    symbols_router,
+    prefix="/symbol",
+    tags=["Symbols"],
 )
 
 
