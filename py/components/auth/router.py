@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status, Request
 from fastapi.responses import JSONResponse
 from components.database import get_session
 from sqlalchemy.ext.asyncio import AsyncSession
-from .utils import RBAChecker, ValidateJWT, generate_jwt_keys, forgotToken
+from .utils import RBAChecker, ValidateJWT, generate_jwt_keys, forgotToken, ValidateJWTByToken
 from fastapi_pagination import Page
 from fastapi_pagination.ext.sqlalchemy import paginate
 from sqlalchemy import select, update, or_
@@ -12,7 +12,8 @@ from .schemas import (
     LoginBody,
     RegisterBody,
     ForgotPasswordBody,
-    ResetPasswordBody
+    ResetPasswordBody,
+    UpdateUserBody
 )
 from .models import User
 import bcrypt
@@ -212,10 +213,97 @@ async def reset_password(
         )
 
 
+@router.post(
+    "/update",
+    dependencies=[
+        Depends(RBAChecker(roles=['admin', 'demo', 'client'], permissions=None))]
+)
+async def update_user(
+    data: UpdateUserBody,
+    session: AsyncSession = Depends(get_session),
+):
+    try:
+        # === Step 1: Find user by email ===
+        result = await session.execute(select(User).where(User.email == data.email))
+        user = result.scalar_one_or_none()
+
+        if user is None:
+            return JSONResponse(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                content={"success": False,
+                         "error": "User account is not found."}
+            )
+
+        # === Step 2: Ensure username is not taken (if updating username) ===
+        if data.username and data.username != user.username:
+            check_result = await session.execute(
+                select(User).where(User.username == data.username)
+            )
+            if check_result.scalar_one_or_none():
+                return JSONResponse(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    content={"success": False,
+                             "error": "Username is already taken."}
+                )
+
+        # === Step 3: Prepare update data ===
+        update_data = data.dict(exclude_none=True)
+        if "password" in update_data:
+            update_data["password"] = bcrypt.hashpw(
+                update_data["password"].encode(), bcrypt.gensalt()
+            ).decode("utf-8")
+
+        # === Step 4: Run update query ===
+        stmt = (
+            update(User)
+            .where(User.id == user.id)
+            .values(**update_data)
+            .execution_options(synchronize_session="fetch")
+        )
+        await session.execute(stmt)
+        await session.commit()
+
+        # === Step 5: Fetch and return updated user ===
+        # Refresh the user object to get updated data
+        await session.refresh(user)
+
+        # If you need to load relationships, use this:
+        result = await session.execute(
+            select(User)
+            .options(selectinload(User.user_permissions))
+            .where(User.id == user.id)
+        )
+        updated_user = result.scalar_one()
+
+        return JSONResponse(
+            status_code=status.HTTP_200_OK,
+            content={
+                "success": True,
+                "user": {
+                    "id": updated_user.id,
+                    "username": updated_user.username,
+                    "firstName": updated_user.first_name,
+                    "lastName": updated_user.last_name,
+                    "email": updated_user.email,
+                    "company": updated_user.company,
+                },
+            },
+        )
+
+    except Exception as e:
+        await session.rollback()
+        print(f"Error: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Could not process, please try again"
+        )
+
+
 @router.get(
     "/identify",
     response_model=Optional[UserSchema],
-    dependencies=[Depends(RBAChecker(roles=['admin', 'demo', 'client'], permissions=None))]
+    dependencies=[
+        Depends(RBAChecker(roles=['admin', 'demo', 'client'], permissions=None))]
 )
 async def identify_user(
     request: Request,
@@ -226,7 +314,8 @@ async def identify_user(
         user_id = params.get("id")
 
         if user_id:
-            stmt = select(User).options(joinedload(User.user_permissions)).where(User.id == user_id)
+            stmt = select(User).options(joinedload(
+                User.user_permissions)).where(User.id == user_id)
             result = await session.execute(stmt)
             user = result.scalars().first()
 
@@ -238,8 +327,68 @@ async def identify_user(
     except HTTPException as e:
         return JSONResponse(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            content={"success": False, "message": "Error identifying user from token."}
+            content={"success": False,
+                     "message": "Error identifying user from token."}
         )
+
+
+@router.get(
+    "/refresh",
+    dependencies=[
+        Depends(RBAChecker(roles=['admin', 'client', 'demo'], permissions=None))]
+)
+async def refresh_token(
+    request: Request,
+    session: AsyncSession = Depends(get_session)
+):
+    try:
+        token = request.cookies.get("refreshToken")
+        params = ValidateJWTByToken(token)
+        user = None
+
+        if "id" in params:
+            query = select(User).where(User.id == params["id"])
+            result = await session.execute(query)
+            user = result.scalar_one_or_none()
+
+        if user is None:
+            return JSONResponse(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                content={"success": False,
+                         "message": "Invalid refresh token, operation not permitted"}
+            )
+
+        # Check if refresh token is valid on backend
+        isValidToken = bcrypt.checkpw(
+            token.encode(), user.refresh_token.encode())
+        if not isValidToken:
+            return JSONResponse(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                content={"success": False,
+                         "message": "Invalid refresh token, operation not permitted"}
+            )
+
+        keys = generate_jwt_keys(user)
+        response_data = {
+            "success": True,
+            "message": "Successfully refreshed access token",
+            "accessToken": keys.get("accessToken"),
+            "refreshToken": keys.get("refreshToken"),
+            "role": user.role.value,
+            "email": user.email,
+            "username": user.username,
+        }
+        response = JSONResponse(content=response_data,
+                                status_code=status.HTTP_200_OK)
+        response.set_cookie(key="accessToken",
+                            value=keys["accessToken"], **get_cookie_options())
+        response.set_cookie(key="refreshToken",
+                            value=keys["refreshToken"], **get_cookie_options())
+        
+        return response
+
+    except Exception as e:
+        print(e)
 
 
 @router.get(
