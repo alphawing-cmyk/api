@@ -1,6 +1,6 @@
 import os
 import logging
-from mailgun import Mailgun, Message
+import requests
 
 class Emailer:
     def __init__(self):
@@ -12,23 +12,27 @@ class Emailer:
         if not all([self.api_key, self.sender, self.domain]):
             raise ValueError("Missing Mailgun configuration in environment variables")
 
-        self.client = Mailgun(domain=self.domain, api_key=self.api_key)
+        self.base_url = f"https://api.mailgun.net/v3/{self.domain}"
 
         logging.info(f"Mailgun sender: {self.sender}")
         logging.info(f"Mailgun API Key: {self.api_key}")
 
     def generate_password_reset(self, to: list[str], reset_link: str):
         try:
-            message = Message(
-                from_email=f"{self.company} <{self.sender}>",
-                to_emails=to,
-                subject=f"{self.company} Password Reset",
-                text="You have requested to reset your password",
-                html=self._generate_html(reset_link)
+            response = requests.post(
+                f"{self.base_url}/messages",
+                auth=("api", self.api_key),
+                data={
+                    "from": f"{self.company} <{self.sender}>",
+                    "to": to,
+                    "subject": f"{self.company} Password Reset",
+                    "text": "You have requested to reset your password.",
+                    "html": self._generate_html(reset_link)
+                }
             )
-            response = self.client.send_message(message)
-            return response
-        except Exception as e:
+            response.raise_for_status()
+            return response.json()
+        except Exception:
             logging.exception("Failed to send password reset email")
 
     def _generate_html(self, reset_link: str) -> str:
@@ -107,4 +111,3 @@ class Emailer:
         </body>
         </html>
         """
-

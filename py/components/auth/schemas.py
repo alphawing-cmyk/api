@@ -56,3 +56,7 @@ class RegisterBody(BaseModel):
 class ForgotPasswordBody(BaseModel):
     email: str
     origin: str
+
+class ResetPasswordBody(BaseModel):
+    password: str
+    token: str

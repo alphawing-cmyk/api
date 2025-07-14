@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Request
 from fastapi.responses import JSONResponse
 from components.database import get_session
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -7,11 +7,18 @@ from fastapi_pagination import Page
 from fastapi_pagination.ext.sqlalchemy import paginate
 from sqlalchemy import select, update, or_
 from sqlalchemy.orm import joinedload, selectinload
-from .schemas import UserSchema, LoginBody, RegisterBody, ForgotPasswordBody
+from .schemas import (
+    UserSchema,
+    LoginBody,
+    RegisterBody,
+    ForgotPasswordBody,
+    ResetPasswordBody
+)
 from .models import User
 import bcrypt
 from components.utils import get_cookie_options
 from components.services.emailer import Emailer
+from typing import Optional
 
 router = APIRouter()
 
@@ -29,25 +36,27 @@ async def login(data: LoginBody, session: AsyncSession = Depends(get_session)):
             status_code=401,
             detail={"success": False, "message": "Invalid Credentials"}
         )
-    
+
     isValid = bcrypt.checkpw(data.password.encode(), user.password.encode())
-    
+
     # Load the role and email attributes explicitly before committing
     user_role = user.role.value
-    user_email = user.email 
+    user_email = user.email
     user_username = user.username
-    
+
     if not isValid:
-        raise HTTPException(
+        return JSONResponse(
             status_code=401,
-            detail={"success": False, "message": "Invalid Credentials"}
+            content={"success": False,
+                     "error": "Invalid credentials, please try again."}
         )
-    
+
     keys = generate_jwt_keys(user)
     salt = bcrypt.gensalt()
     encryptedRefresh = bcrypt.hashpw(keys['refreshToken'].encode(), salt=salt)
-    
-    stmt = update(User).where(User.id == user.id).values(refresh_token=encryptedRefresh.decode("utf-8"))
+
+    stmt = update(User).where(User.id == user.id).values(
+        refresh_token=encryptedRefresh.decode("utf-8"))
     await session.execute(stmt)
     await session.commit()
 
@@ -63,33 +72,36 @@ async def login(data: LoginBody, session: AsyncSession = Depends(get_session)):
         }
     }
 
-    response = JSONResponse(content=response_data, status_code=status.HTTP_200_OK)
-    response.set_cookie(key="accessToken", value=keys["accessToken"], **get_cookie_options())
-    response.set_cookie(key="refreshToken", value=keys["refreshToken"], **get_cookie_options())
+    response = JSONResponse(content=response_data,
+                            status_code=status.HTTP_200_OK)
+    response.set_cookie(key="accessToken",
+                        value=keys["accessToken"], **get_cookie_options())
+    response.set_cookie(key="refreshToken",
+                        value=keys["refreshToken"], **get_cookie_options())
     return response
-
-
 
 
 @router.post("/register")
 async def register(
-    data: RegisterBody, 
+    data: RegisterBody,
     session: AsyncSession = Depends(get_session)
 ):
     try:
         # === Check if user already exists ===
-        query = select(User).where(or_(User.username == data.username, User.email == data.email))
+        query = select(User).where(
+            or_(User.username == data.username, User.email == data.email))
         result = await session.execute(query)
         existing_user = result.scalar_one_or_none()
 
         if existing_user:
-            raise HTTPException(
+            return JSONResponse(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail={"success": False, "error": "User already exists"}
+                content={"success": False, "error": "User already exists"}
             )
 
         # === Hash password and create new user ===
-        hashed_password = bcrypt.hashpw(data.password.encode(), bcrypt.gensalt()).decode("utf-8")
+        hashed_password = bcrypt.hashpw(
+            data.password.encode(), bcrypt.gensalt()).decode("utf-8")
         new_user = User(
             username=data.username,
             first_name=data.firstName,
@@ -122,6 +134,7 @@ async def register(
             detail={"success": False, "error": str(e)}
         )
 
+
 @router.post("/forgot")
 async def forgot_password(
     data: ForgotPasswordBody,
@@ -133,13 +146,13 @@ async def forgot_password(
         user = result.scalar_one_or_none()
 
         if not user:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail={"success": False, "error": "Email not found"}
+            return JSONResponse(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                content={"success": False, "error": "Not authorized."}
             )
 
         # === Generate token and send email ===
-        res = await forgotToken(data.email, session=session) 
+        res = await forgotToken(data.email, session=session)
         reset_link = f"{data.origin}/reset/{res['token']}"
         print(reset_link)
 
@@ -151,21 +164,89 @@ async def forgot_password(
             content={"success": True, "message": "Successfully processed"}
         )
 
-    except HTTPException:
-        raise
     except Exception as e:
         print(e)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail={"success": False, "error": "Could not process, please try again"}
+            detail={"success": False,
+                    "error": "Could not process, please try again"}
         )
-    
+
+
+@router.post("/reset")
+async def reset_password(
+    data: ResetPasswordBody,
+    session: AsyncSession = Depends(get_session)
+):
+    try:
+        # === Check if user exists ===
+        result = await session.execute(select(User).where(User.forgot_token == data.token))
+        user = result.scalar_one_or_none()
+
+        if user is None:
+            return JSONResponse(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                content={"success": False,
+                         "error": "User account is not found."}
+            )
+
+        # Update user credentials
+        user.forgot_token = None
+        user.password = bcrypt.hashpw(
+            data.password.encode(), bcrypt.gensalt()).decode("utf-8")
+        session.add(user)
+        await session.commit()
+
+        return JSONResponse(
+            status_code=status.HTTP_200_OK,
+            content={"success": True,
+                     "message": "Successfully updated password."}
+        )
+
+    except Exception as e:
+        print(e)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={"success": False,
+                    "error": "Could not process, please try again"}
+        )
+
 
 @router.get(
-    "/users", 
+    "/identify",
+    response_model=Optional[UserSchema],
+    dependencies=[Depends(RBAChecker(roles=['admin', 'demo', 'client'], permissions=None))]
+)
+async def identify_user(
+    request: Request,
+    session: AsyncSession = Depends(get_session)
+):
+    try:
+        params = ValidateJWT(request=request)
+        user_id = params.get("id")
+
+        if user_id:
+            stmt = select(User).options(joinedload(User.user_permissions)).where(User.id == user_id)
+            result = await session.execute(stmt)
+            user = result.scalars().first()
+
+            if user:
+                return user
+        else:
+            return None
+
+    except HTTPException as e:
+        return JSONResponse(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            content={"success": False, "message": "Error identifying user from token."}
+        )
+
+
+@router.get(
+    "/users",
     response_model=Page[UserSchema],
     dependencies=[Depends(RBAChecker(roles=['admin'], permissions=None))]
 )
 async def get_users(session: AsyncSession = Depends(get_session)):
-    query    = select(User).options(joinedload(User.user_permissions))
-    return await paginate(session,query=query)
+    query = select(User).options(joinedload(User.user_permissions))
+    return await paginate(session, query=query)

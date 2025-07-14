@@ -42,11 +42,11 @@ class Permission(Base):
 
     
 class UserPermission(Base):
-    __tablename__ = "UserPermission"
+    __tablename__ = "user_permissions"
 
-    userId: Mapped[int]                    = mapped_column(ForeignKey("users.id"), primary_key=True, name="userId")
-    permissionId: Mapped[int]              = mapped_column(ForeignKey("Permission.id"), primary_key=True, name="permissionId")
-    grantedAt: Mapped[datetime]            = mapped_column(default=func.now(), name="grantedAt")
+    userId: Mapped[int]                    = mapped_column(ForeignKey("users.id"), primary_key=True, name="user_id")
+    permissionId: Mapped[int]               = mapped_column(ForeignKey("Permission.id"), primary_key=True, name="permission_id")
+    grantedAt: Mapped[datetime]             = mapped_column(default=func.now(), name="granted_at")
     user: Mapped["User"]                    = relationship(back_populates="user_permissions")
     permissions: Mapped[List["Permission"]] = relationship(back_populates="permission")
     def __repr__(self) -> str:

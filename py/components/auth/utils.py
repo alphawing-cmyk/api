@@ -78,6 +78,8 @@ def ValidateJWT(request: Request):
 
 def RBAChecker(roles: List[str], permissions: Optional[List[str]] = None):
     async def check_role(payload: dict = Depends(ValidateJWT), session: AsyncSession= Depends(get_session)):
+        if payload is None:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Operation not permitted")
         if payload.get("role") not in roles:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Operation not permitted")
         if permissions != None:
