@@ -122,6 +122,7 @@ WHERE symbol = $1;
 -- name: InsertHistoricalBar :one
 INSERT INTO historical (
     custom_id,
+    ticker_id,
     symbol,
     milliseconds,
     duration,
@@ -138,20 +139,21 @@ INSERT INTO historical (
     market
 ) VALUES (
     $1,  -- custom_id
-    $2,  -- symbol
-    $3,  -- milliseconds
-    $4,  -- duration
-    $5,  -- open
-    $6,  -- low
-    $7,  -- high
-    $8,  -- close
-    $9,  -- adj_close
-    $10, -- volume
-    $11, -- vwap
-    $12, -- timestamp
-    $13, -- transactions
-    $14, -- source
-    $15  -- market
+    $2,  -- ticker_id
+    $3,  -- symbol
+    $4,  -- milliseconds
+    $5,  -- duration
+    $6,  -- open
+    $7,  -- low
+    $8,  -- high
+    $9,  -- close
+    $10,  -- adj_close
+    $11, -- volume
+    $12, -- vwap
+    $13, -- timestamp
+    $14, -- transactions
+    $15, -- source
+    $16  -- market
 )
 ON CONFLICT (custom_id) DO NOTHING
 RETURNING *;

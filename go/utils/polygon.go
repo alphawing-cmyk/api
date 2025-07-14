@@ -168,6 +168,8 @@ func PolygonStoreAggregatedResults(results []AggregateBarResponse, queries *db.Q
 			params := db.InsertHistoricalBarParams{
 				CustomID: fmt.Sprintf("%d-%s-%d-%s", ticker.ID, ticker.Name, ohlcv.Timestamp, datum.Duration),
 				Symbol:   datum.Ticker,
+				TickerID: sql.NullInt32{Int32: int32(ticker.ID),
+					Valid: true},
 				Milliseconds: sql.NullInt64{Int64: int64(ohlcv.Timestamp),
 					Valid: true},
 				Duration:     sql.NullString{String: datum.Duration, Valid: true},
