@@ -20,7 +20,7 @@ class UpdateSymbolBody(BaseModel):
     industry: Optional[str] = None
     market: Optional[str] = None
     market_cap: Optional[str] = None
-    alt_names: Optional[List[Dict[str, Any]]] = None
+    alt_names: Optional[dict[str, Any]] = None
 
 class DeleteSymbolBody(BaseModel):
     id: int

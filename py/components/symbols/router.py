@@ -83,7 +83,6 @@ async def add_ticker(
 async def update_ticker(
     data: UpdateSymbolBody,
     session: AsyncSession = Depends(get_session),
-    user: dict = Depends(ValidateJWT)
 ):
 
     try:
@@ -141,7 +140,26 @@ async def update_ticker(
 async def get_tickers(
     request: Request,
     session: AsyncSession = Depends(get_session),
-    user: dict = Depends(ValidateJWT)
+):
+    queryParams = dict(request.query_params)
+    query = select(Tickers) \
+        .order_by(Tickers.name)
+
+    if "name" in queryParams:
+        query = query.filter(func.cast(Tickers.name, String).ilike(
+            f"%{queryParams['name']}%"))
+
+    return await paginate(session, query=query)
+
+@router.delete(
+    "/delete",
+    response_model=Page[SymbolSchema],
+    dependencies=[
+        Depends(RBAChecker(roles=['admin', 'client', 'demo'], permissions=None))]
+)
+async def delete_ticker(
+    request: Request,
+    session: AsyncSession = Depends(get_session),
 ):
     queryParams = dict(request.query_params)
     query = select(Tickers) \
