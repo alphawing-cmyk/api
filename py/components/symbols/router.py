@@ -32,47 +32,31 @@ async def update_ticker(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 content={
                         "success": False,
-                         "error": "User account is not found."}
+                         "error": "Ticker is not found."}
             )
 
     
         # === Step 2: Prepare update data ===
         update_data = data.model_dump(exclude_none=True)
      
-        # === Step 4: Run update query ===
+        # === Step 3: Run update query ===
         stmt = (
-            update(User)
-            .where(User.id == user.id)
+            update(Tickers)
+            .where(Tickers.id == data.id)
             .values(**update_data)
             .execution_options(synchronize_session="fetch")
         )
         await session.execute(stmt)
         await session.commit()
 
-        # === Step 5: Fetch and return updated user ===
-        # Refresh the user object to get updated data
-        await session.refresh(user)
-
-        # If you need to load relationships, use this:
-        result = await session.execute(
-            select(Tickers)
-            .options(selectinload(User.user_permissions))
-            .where(User.id == user.id)
-        )
-        updated_user = result.scalar_one()
+        # === Step 4: Fetch and return updated Ticker ===
+        await session.refresh(ticker)
 
         return JSONResponse(
             status_code=status.HTTP_200_OK,
             content={
                 "success": True,
-                "user": {
-                    "id": updated_user.id,
-                    "username": updated_user.username,
-                    "firstName": updated_user.first_name,
-                    "lastName": updated_user.last_name,
-                    "email": updated_user.email,
-                    "company": updated_user.company,
-                },
+                "message": "Successfully updated symbol"
             },
         )
 
