@@ -2,6 +2,8 @@ from typing import Optional, List, Dict, Any
 from pydantic import BaseModel, Field
 from datetime import datetime
 from typing import Union
+from enum import Enum
+
 
 class AddSymbolBody(BaseModel):
     symbol: str
@@ -9,7 +11,7 @@ class AddSymbolBody(BaseModel):
     industry: Optional[str] = None
     market: str
     market_cap: Optional[str] = None
-    alt_names: Optional[List[Dict[str, Any]]] = None
+    alt_names: Optional[dict[str, Any]] = None
 
 class UpdateSymbolBody(BaseModel):
     id: int
