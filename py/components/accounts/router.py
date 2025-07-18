@@ -2,14 +2,20 @@ from fastapi import APIRouter, Depends, HTTPException, status, Request, Body
 from fastapi.responses import JSONResponse
 from fastapi_pagination import Page
 from fastapi_pagination.ext.sqlalchemy import paginate
+from fastapi.encoders import jsonable_encoder
 from sqlalchemy import select, func, String, Select, update
 from sqlalchemy.orm import joinedload, selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 from components.database import get_session
 from components.auth.utils import RBAChecker, ValidateJWT
+from components.utils import decrypt
 from components.auth.models import User
 from typing import Union, List
-from .schemas import AdminAddAccountSchema, AccountSchema
+from .schemas import (
+    AdminAddAccountSchema, 
+    AccountSchema, 
+    ClientAddAccountSchema
+)
 from .models import Account
 
 router = APIRouter()
@@ -37,15 +43,61 @@ async def add_account(
             auto_trade = data.auto_trade
         )
 
-        print(account.__dict__)
         session.add(account)
         await session.commit()
+        await session.refresh(account)
+        account = AccountSchema.from_orm(account).model_dump()
 
         return JSONResponse(
             status_code=status.HTTP_200_OK,
             content={
                 "success": True,
-                "message": "Successfully added account"
+                "message": "Successfully added account",
+                "data": jsonable_encoder(account)
+            },
+        )
+
+    except Exception as e:
+        await session.rollback()
+        print(f"Error: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Could not process, please try again"
+        )
+
+@router.post(
+    "/client/add",
+    dependencies=[Depends(RBAChecker(roles=['admin','demo','client'], permissions=None))]
+)
+async def add_account(
+    data: ClientAddAccountSchema,
+    session: AsyncSession = Depends(get_session),
+    user: dict = Depends(ValidateJWT)
+):
+    
+    try:
+        account = Account(
+            user_id = user.get("id"),
+            account_num = data.account_num,
+            nickname = data.nickname,
+            broker = data.broker.name,
+            date_opened = data.date_opened,
+            current_balance = data.current_balance,
+            account_type = data.account_type.name,
+            auto_trade = data.auto_trade
+        )
+
+        session.add(account)
+        await session.commit()
+        await session.refresh(account)
+        account = AccountSchema.from_orm(account).model_dump()
+
+        return JSONResponse(
+            status_code=status.HTTP_200_OK,
+            content={
+                "success": True,
+                "message": "Successfully added account",
+                "data": jsonable_encoder(account)
             },
         )
 

@@ -11,7 +11,7 @@ from datetime import datetime
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from components.database import Base
 from typing import Optional
-from .schemas import Broker, AccountType
+from .schemas import BrokerEnum, AccountTypeEnum
 
 
 class Account(Base):
@@ -20,13 +20,13 @@ class Account(Base):
     user_id: Mapped[int]                         = mapped_column(Integer, ForeignKey('users.id'), nullable=False)
     account_num: Mapped[str]                     = mapped_column(String)
     nickname: Mapped[Optional[str]]              = mapped_column(String(255))
-    broker: Mapped[Broker]                       = mapped_column(SAENUM(Broker, name="Broker"), nullable=False)
+    broker: Mapped[BrokerEnum]                   = mapped_column(SAENUM(BrokerEnum, name="Broker"), nullable=False)
     date_opened: Mapped[Optional[datetime]]      = mapped_column(DateTime)
     initial_balance: Mapped[Optional[Numeric]]   = mapped_column(Numeric(15, 2), default=0.00)
     current_balance: Mapped[Optional[Numeric]]   = mapped_column(Numeric(15, 2), default=0.00)
-    account_type: Mapped[AccountType]            = mapped_column(SAENUM(AccountType, name="AccountType"), nullable=False)
+    account_type: Mapped[AccountTypeEnum]        = mapped_column(SAENUM(AccountTypeEnum, name="AccountType"), nullable=False)
     auto_trade: Mapped[bool]                     = mapped_column(Boolean, default=False)
-    user                                         = relationship("components.auth.models.User", back_populates="accounts")
+    user                                         = relationship("components.auth.models.User", back_populates="accounts", lazy="selectin")
 
 
     def __repr__(self):

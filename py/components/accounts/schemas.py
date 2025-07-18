@@ -6,30 +6,30 @@ from enum import Enum
 from components.utils import decrypt, encrypt
 
 
-class Broker(str, Enum):
-    TRADESTATION        = "tradestation"
-    ALPACA              = "alpaca"
-    KRAKEN              = "kraken"
-    COINBASE            = "coinbase"
-    INTERACTIVE_BROKERS = "interactive_brokers"
-    OANDA               = "oanda"
+class BrokerEnum(str, Enum):
+    tradestation        = "tradestation"
+    alpaca              = "alpaca"
+    kraken              = "kraken"
+    coinbase            = "coinbase"
+    interactive_brokers = "interactive_brokers"
+    oanda               = "oanda"
 
 
-class AccountType(str, Enum):
-    SERVICE_ACCOUNT  = "service_account"
-    LIVE_ACCOUNT     = "live_account"
-    PAPER_ACCOUNT    = "paper_account"
+class AccountTypeEnum(str, Enum):
+    service_account  = "service_account"
+    live_account     = "live_account"
+    paper_account    = "paper_account"
 
 
 class AdminAddAccountSchema(BaseModel):
     account_num: str
     user_id: int
     nickname: Optional[str] = None
-    broker: Broker
+    broker: BrokerEnum
     date_opened: Optional[date] = None
     initial_balance: Optional[float] = None
     current_balance: Optional[float] = None
-    account_type: AccountType = Field(default=AccountType.PAPER_ACCOUNT)
+    account_type: AccountTypeEnum = Field(default=AccountTypeEnum.paper_account)
     auto_trade: bool = Field(default=False)
 
 
@@ -40,17 +40,20 @@ class AdminAddAccountSchema(BaseModel):
     
 
 class ClientAddAccountSchema(BaseModel):
-    accountNum: str
+    account_num: str
     nickname: Optional[str] = None
-    broker: Broker
-    dateOpened: Optional[str] = None
-    initialBalance: Optional[float] = None
-    currentBalance: Optional[float] = None
-    accountType: AccountType = Field(default=AccountType.PAPER_ACCOUNT)
-    autoTrade: bool = Field(default=False)
+    broker: BrokerEnum
+    date_opened: Optional[date] = None
+    initial_balance: Optional[float] = None
+    current_balance: Optional[float] = None
+    account_type: AccountTypeEnum = Field(default=AccountTypeEnum.paper_account)
+    auto_trade: bool = Field(default=False)
 
-    class Config:
-        extra = "allow"
+
+    @field_validator('account_num')
+    def encrypt_account_num(cls, v:str):
+        return encrypt(v)
+
 
 class AccountUserInfo(BaseModel):
     id: int
@@ -58,70 +61,72 @@ class AccountUserInfo(BaseModel):
     last_name: str
     username: str
 
+    class Config:
+        from_attributes = True
+
 class AccountSchema(BaseModel):
     id: int
-    userId: int
-    accountNum: str
+    user_id: int
+    account_num: str
     nickname: Optional[str] = None
-    broker: Broker
-    dateOpened: Optional[datetime] = None
-    initialBalance: Optional[float] = None
-    currentBalance: Optional[float] = None
-    accountType: AccountType
-    autoTrade: bool
+    broker: BrokerEnum
+    date_opened: Optional[date] = None
+    initial_balance: Optional[float] = None
+    current_balance: Optional[float] = None
+    account_type: AccountTypeEnum
+    auto_trade: bool
     user: AccountUserInfo
 
-    @field_validator('accountNum')
+    @field_validator('account_num')
     def decrypt_account_num(cls, v:str):
         return decrypt(v)
-
 
     class Config:
         from_attributes = True
 
-class GetAccountsQueryParams(BaseModel):
-    page: conint(ge=1)
-    size: conint(ge=1, le=100)
-    nickname: Optional[str] = None
+# class GetAccountsQueryParams(BaseModel):
+#     page: conint(ge=1)
+#     size: conint(ge=1, le=100)
+#     nickname: Optional[str] = None
 
-class UpdateAdminAccountSchema(BaseModel):
-    id: int
-    accountNum: Optional[str] = None
-    nickname: Optional[str] = None
-    broker: Optional[Broker] = None
-    dateOpened: Optional[str] = None
-    initialBalance: Optional[float] = None
-    currentBalance: Optional[float] = None
-    accountType: Optional[AccountType] = Field(default=AccountType.PAPER_ACCOUNT)
-    autoTrade: Optional[bool] = Field(default=False)
-    userId: Optional[int] = None
+# class UpdateAdminAccountSchema(BaseModel):
+#     id: int
+#     accountNum: Optional[str] = None
+#     nickname: Optional[str] = None
+#     Broker: Optional[BrokerEnum] = None
+#     dateOpened: Optional[str] = None
+#     initialBalance: Optional[float] = None
+#     currentBalance: Optional[float] = None
+#     AccountType: Optional[AccountTypeEnum] = Field(default=AccountTypeEnum.paper_account)
+#     autoTrade: Optional[bool] = Field(default=False)
+#     userId: Optional[int] = None
 
-    class Config:
-        extra = "forbid"
+#     class Config:
+#         extra = "forbid"
 
 
-class UpdateClientAccountSchema(BaseModel):
-    id: int
-    accountNum: Optional[str] = None
-    nickname: Optional[str] = None
-    broker: Optional[Broker] = None
-    dateOpened: Optional[str] = None
-    initialBalance: Optional[float] = None
-    currentBalance: Optional[float] = None
-    accountType: Optional[AccountType] = Field(default=AccountType.PAPER_ACCOUNT)
-    autoTrade: Optional[bool] = Field(default=False)
+# class UpdateClientAccountSchema(BaseModel):
+#     id: int
+#     accountNum: Optional[str] = None
+#     nickname: Optional[str] = None
+#     Broker: Optional[BrokerEnum] = None
+#     dateOpened: Optional[str] = None
+#     initialBalance: Optional[float] = None
+#     currentBalance: Optional[float] = None
+#     AccountType: Optional[AccountTypeEnum] = Field(default=AccountTypeEnum.paper_account)
+#     autoTrade: Optional[bool] = Field(default=False)
 
-    class Config:
-        extra = "forbid"
+#     class Config:
+#         extra = "forbid"
 
-class DeleteAccountSchema(BaseModel):
-    id: int
+# class DeleteAccountSchema(BaseModel):
+#     id: int
 
-    class Config:
-        extra = "forbid"
+#     class Config:
+#         extra = "forbid"
 
-class BrokersResponse(BaseModel):
-    success: bool
-    brokers: Optional[List[dict]] = None
-    message: Optional[str] = None
-    error: Optional[str] = None
+# class BrokersResponse(BaseModel):
+#     success: bool
+#     brokers: Optional[List[dict]] = None
+#     message: Optional[str] = None
+#     error: Optional[str] = None

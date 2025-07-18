@@ -6,7 +6,6 @@ from config import settings
 
 def encrypt(text: str) -> str:
     iv          = secrets.token_bytes(16)
-    print(settings.aes_256_secret)
     key         = bytes.fromhex(settings.aes_256_secret)
     cipher      = Cipher(algorithms.AES(key), modes.CBC(iv), backend=default_backend())
     encryptor   = cipher.encryptor()
