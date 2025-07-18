@@ -6,7 +6,7 @@ from sqlalchemy import select, func, String, Select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from components.database import get_session
 from components.auth.utils import RBAChecker, ValidateJWT
-from .schemas import SymbolSchema, UpdateSymbolBody, AddSymbolBody
+from .schemas import SymbolSchema, UpdateSymbolBody, AddSymbolBody, DeleteSymbolBody
 from .models import Tickers
 from typing import Union, List
 
@@ -153,20 +153,22 @@ async def get_tickers(
 
 @router.delete(
     "/delete",
-    response_model=Page[SymbolSchema],
     dependencies=[
-        Depends(RBAChecker(roles=['admin', 'client', 'demo'], permissions=None))]
+        Depends(RBAChecker(roles=['admin'], permissions=None))]
 )
 async def delete_ticker(
-    request: Request,
+    data: DeleteSymbolBody,
     session: AsyncSession = Depends(get_session),
 ):
-    queryParams = dict(request.query_params)
-    query = select(Tickers) \
-        .order_by(Tickers.name)
+    # Look up the ticker
+    result = await session.execute(select(Tickers).where(Tickers.id == data.id))
+    ticker = result.scalar_one_or_none()
 
-    if "name" in queryParams:
-        query = query.filter(func.cast(Tickers.name, String).ilike(
-            f"%{queryParams['name']}%"))
+    if not ticker:
+        raise HTTPException(status_code=404, detail="Ticker not found")
 
-    return await paginate(session, query=query)
+    # Delete and commit
+    await session.delete(ticker)
+    await session.commit()
+
+    return {"message": f"Ticker deleted successfully"}
