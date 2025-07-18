@@ -1,12 +1,12 @@
 from typing import Optional, List, Dict, Any
 from pydantic import BaseModel, Field, conint, field_validator
-from datetime import datetime
+from datetime import datetime, date
 from typing import Union
 from enum import Enum
-from components.utils import decrypt
+from components.utils import decrypt, encrypt
 
 
-class BrokerEnum(str, Enum):
+class Broker(str, Enum):
     TRADESTATION        = "tradestation"
     ALPACA              = "alpaca"
     KRAKEN              = "kraken"
@@ -15,31 +15,38 @@ class BrokerEnum(str, Enum):
     OANDA               = "oanda"
 
 
-class AccountTypeEnum(str, Enum):
+class AccountType(str, Enum):
     SERVICE_ACCOUNT  = "service_account"
     LIVE_ACCOUNT     = "live_account"
     PAPER_ACCOUNT    = "paper_account"
 
 
 class AdminAddAccountSchema(BaseModel):
-    accountNum: str
-    userId: int
+    account_num: str
+    user_id: int
     nickname: Optional[str] = None
-    broker: BrokerEnum
-    dateOpened: Optional[str] = None
-    initialBalance: Optional[float] = None
-    currentBalance: Optional[float] = None
-    accountType: AccountTypeEnum = Field(default=AccountTypeEnum.PAPER_ACCOUNT)
-    autoTrade: bool = Field(default=False)
+    broker: Broker
+    date_opened: Optional[date] = None
+    initial_balance: Optional[float] = None
+    current_balance: Optional[float] = None
+    account_type: AccountType = Field(default=AccountType.PAPER_ACCOUNT)
+    auto_trade: bool = Field(default=False)
+
+
+    @field_validator('account_num')
+    def encrypt_account_num(cls, v:str):
+        return encrypt(v)
+    
+    
 
 class ClientAddAccountSchema(BaseModel):
     accountNum: str
     nickname: Optional[str] = None
-    broker: BrokerEnum
+    broker: Broker
     dateOpened: Optional[str] = None
     initialBalance: Optional[float] = None
     currentBalance: Optional[float] = None
-    accountType: AccountTypeEnum = Field(default=AccountTypeEnum.PAPER_ACCOUNT)
+    accountType: AccountType = Field(default=AccountType.PAPER_ACCOUNT)
     autoTrade: bool = Field(default=False)
 
     class Config:
@@ -56,11 +63,11 @@ class AccountSchema(BaseModel):
     userId: int
     accountNum: str
     nickname: Optional[str] = None
-    broker: BrokerEnum
+    broker: Broker
     dateOpened: Optional[datetime] = None
     initialBalance: Optional[float] = None
     currentBalance: Optional[float] = None
-    accountType: AccountTypeEnum
+    accountType: AccountType
     autoTrade: bool
     user: AccountUserInfo
 
@@ -81,11 +88,11 @@ class UpdateAdminAccountSchema(BaseModel):
     id: int
     accountNum: Optional[str] = None
     nickname: Optional[str] = None
-    broker: Optional[BrokerEnum] = None
+    broker: Optional[Broker] = None
     dateOpened: Optional[str] = None
     initialBalance: Optional[float] = None
     currentBalance: Optional[float] = None
-    accountType: Optional[AccountTypeEnum] = Field(default=AccountTypeEnum.PAPER_ACCOUNT)
+    accountType: Optional[AccountType] = Field(default=AccountType.PAPER_ACCOUNT)
     autoTrade: Optional[bool] = Field(default=False)
     userId: Optional[int] = None
 
@@ -97,11 +104,11 @@ class UpdateClientAccountSchema(BaseModel):
     id: int
     accountNum: Optional[str] = None
     nickname: Optional[str] = None
-    broker: Optional[BrokerEnum] = None
+    broker: Optional[Broker] = None
     dateOpened: Optional[str] = None
     initialBalance: Optional[float] = None
     currentBalance: Optional[float] = None
-    accountType: Optional[AccountTypeEnum] = Field(default=AccountTypeEnum.PAPER_ACCOUNT)
+    accountType: Optional[AccountType] = Field(default=AccountType.PAPER_ACCOUNT)
     autoTrade: Optional[bool] = Field(default=False)
 
     class Config:

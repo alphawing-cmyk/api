@@ -7,6 +7,8 @@ from config import settings
 from redis import Redis
 from components.auth.router import router as auth_router
 from components.symbols.router import router as symbols_router
+from components.accounts.router import router as accounts_router
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator:
@@ -54,6 +56,12 @@ app.include_router(
     symbols_router,
     prefix="/symbol",
     tags=["Symbols"],
+)
+
+app.include_router(
+    accounts_router,
+    prefix="/account",
+    tags=["Accounts"],
 )
 
 

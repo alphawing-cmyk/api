@@ -3,10 +3,11 @@ from fastapi.responses import JSONResponse
 from fastapi_pagination import Page
 from fastapi_pagination.ext.sqlalchemy import paginate
 from sqlalchemy import select, func, String, Select, update
-from sqlalchemy.orm import joinedload
+from sqlalchemy.orm import joinedload, selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 from components.database import get_session
 from components.auth.utils import RBAChecker, ValidateJWT
+from components.auth.models import User
 from typing import Union, List
 from .schemas import AdminAddAccountSchema, AccountSchema
 from .models import Account
@@ -15,24 +16,36 @@ router = APIRouter()
 
 
 @router.post(
-    "/add",
+    "/admin/add",
     dependencies=[Depends(RBAChecker(roles=['admin'], permissions=None))]
 )
-async def add_ticker(
-    data: AdminAddAccountSchema  = Body(...),
+async def add_account(
+    data: AdminAddAccountSchema,
     session: AsyncSession = Depends(get_session),
     user: dict = Depends(ValidateJWT)
 ):
     
     try:
+        account = Account(
+            user_id = data.user_id,
+            account_num = data.account_num,
+            nickname = data.nickname,
+            broker = data.broker.name,
+            date_opened = data.date_opened,
+            current_balance = data.current_balance,
+            account_type = data.account_type.name,
+            auto_trade = data.auto_trade
+        )
+
+        print(account.__dict__)
+        session.add(account)
         await session.commit()
 
         return JSONResponse(
             status_code=status.HTTP_200_OK,
             content={
                 "success": True,
-                "added": successes,
-                "skipped": failures,
+                "message": "Successfully added account"
             },
         )
 
@@ -71,6 +84,7 @@ async def get_accounts_by_user(
                         .order_by(Account.id)
 
     if "nickname" in queryParams:
-        query = query.filter(Account.nickname.ilike(f"%{queryParams["nickname"]}%"))
+        query = query.filter(Account.nickname.ilike(f"%{queryParams['nickname']}%"))
+
 
     return await paginate(session,query=query)
