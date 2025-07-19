@@ -1,16 +1,14 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Request, Body
+from fastapi import APIRouter, Depends, HTTPException, status, Request
 from fastapi.responses import JSONResponse
 from fastapi_pagination import Page
 from fastapi_pagination.ext.sqlalchemy import paginate
 from fastapi.encoders import jsonable_encoder
-from sqlalchemy import select, func, String, Select, update
+from sqlalchemy import select, text, func
 from sqlalchemy.orm import joinedload, selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 from components.database import get_session
 from components.auth.utils import RBAChecker, ValidateJWT
-from components.utils import decrypt
 from components.auth.models import User
-from typing import Union, List
 from .schemas import (
     AdminAddAccountSchema, 
     AccountSchema, 
@@ -108,6 +106,61 @@ async def add_account(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Could not process, please try again"
         )
+
+
+@router.get(
+    "/stats", 
+    dependencies=[Depends(RBAChecker(roles=['admin','client','demo'], permissions=None))]
+)
+async def get_stats(
+    session: AsyncSession = Depends(get_session),     
+    user: dict = Depends(ValidateJWT)
+):
+    try:
+        user_id = user.get("id")
+
+        # Raw SQL query for account counts
+        sql = text("""
+            SELECT
+              COALESCE(SUM(CASE WHEN account_type = 'service_account' THEN 1 ELSE 0 END), 0) AS total_service_account,
+              COALESCE(SUM(CASE WHEN account_type = 'live_account' THEN 1 ELSE 0 END), 0) AS total_live_account,
+              COALESCE(SUM(CASE WHEN account_type = 'paper_account' THEN 1 ELSE 0 END), 0) AS total_paper_account,
+              COUNT(*) AS total_accounts
+            FROM accounts
+            WHERE user_id = :user_id
+        """)
+        result = await session.execute(sql, {"user_id": user_id})
+        counts = result.fetchone()
+
+        # Aggregate balances
+        current_balance_result = await session.execute(
+            select(func.sum(Account.current_balance)).where(Account.user_id == user_id)
+        )
+        current_balance = current_balance_result.scalar() or 0.0
+
+        initial_balance_result = await session.execute(
+            select(func.sum(Account.initial_balance)).where(Account.user_id == user_id)
+        )
+        initial_balance = initial_balance_result.scalar() or 0.0
+
+        # Calculate account growth
+        account_growth = (
+            (current_balance / initial_balance) * 100 if initial_balance > 0 else 0.0
+        )
+
+        return {
+            "total_service_account": counts.total_service_account,
+            "total_live_account": counts.total_live_account,
+            "total_paper_account": counts.total_paper_account,
+            "total_accounts": counts.total_accounts,
+            "current_balance": float(current_balance),
+            "initial_balance": float(initial_balance),
+            "account_growth": round(account_growth, 2),
+        }
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Internal Server Error: {e}")
+
 
 
 @router.get(
