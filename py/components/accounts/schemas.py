@@ -84,49 +84,60 @@ class AccountSchema(BaseModel):
     class Config:
         from_attributes = True
 
-# class GetAccountsQueryParams(BaseModel):
-#     page: conint(ge=1)
-#     size: conint(ge=1, le=100)
-#     nickname: Optional[str] = None
+class GetAccountsQueryParams(BaseModel):
+    page: conint(ge=1)
+    size: conint(ge=1, le=100)
+    nickname: Optional[str] = None
 
-# class UpdateAdminAccountSchema(BaseModel):
-#     id: int
-#     accountNum: Optional[str] = None
-#     nickname: Optional[str] = None
-#     Broker: Optional[BrokerEnum] = None
-#     dateOpened: Optional[str] = None
-#     initialBalance: Optional[float] = None
-#     currentBalance: Optional[float] = None
-#     AccountType: Optional[AccountTypeEnum] = Field(default=AccountTypeEnum.paper_account)
-#     autoTrade: Optional[bool] = Field(default=False)
-#     userId: Optional[int] = None
-
-#     class Config:
-#         extra = "forbid"
+class UpdateAdminAccountSchema(BaseModel):
+    id: int
+    account_num: Optional[str] = None
+    nickname: Optional[str] = None
+    broker: Optional[BrokerEnum] = None
+    date_opened: Optional[date] = None
+    initial_balance: Optional[float] = None
+    current_balance: Optional[float] = None
+    account_type: Optional[AccountTypeEnum] = Field(default=AccountTypeEnum.paper_account)
+    auto_trade: Optional[bool] = Field(default=False)
+    user_id: Optional[int] = None
 
 
-# class UpdateClientAccountSchema(BaseModel):
-#     id: int
-#     accountNum: Optional[str] = None
-#     nickname: Optional[str] = None
-#     Broker: Optional[BrokerEnum] = None
-#     dateOpened: Optional[str] = None
-#     initialBalance: Optional[float] = None
-#     currentBalance: Optional[float] = None
-#     AccountType: Optional[AccountTypeEnum] = Field(default=AccountTypeEnum.paper_account)
-#     autoTrade: Optional[bool] = Field(default=False)
+    @field_validator('account_num')
+    def encrypt_account_num(cls, v:str):
+        if v is not None:
+            return encrypt(v)
+        return v
 
-#     class Config:
-#         extra = "forbid"
+    class Config:
+        extra = "forbid"
 
-# class DeleteAccountSchema(BaseModel):
-#     id: int
 
-#     class Config:
-#         extra = "forbid"
+class UpdateClientAccountSchema(BaseModel):
+    id: int
+    account_num: Optional[str] = None
+    nickname: Optional[str] = None
+    broker: Optional[BrokerEnum] = None
+    date_opened: Optional[date] = None
+    initial_balance: Optional[float] = None
+    current_balance: Optional[float] = None
+    account_type: Optional[AccountTypeEnum] = Field(default=AccountTypeEnum.paper_account)
+    auto_trade: Optional[bool] = Field(default=False)
 
-# class BrokersResponse(BaseModel):
-#     success: bool
-#     brokers: Optional[List[dict]] = None
-#     message: Optional[str] = None
-#     error: Optional[str] = None
+    @field_validator('account_num')
+    def encrypt_account_num(cls, v:str):
+        return encrypt(v)
+
+    class Config:
+        extra = "forbid"
+
+class DeleteAccountSchema(BaseModel):
+    id: int
+
+    class Config:
+        extra = "forbid"
+
+class BrokersResponse(BaseModel):
+    success: bool
+    brokers: Optional[List[dict]] = None
+    message: Optional[str] = None
+    error: Optional[str] = None

@@ -33,7 +33,7 @@ class User(Base):
 
 
 class Permission(Base):
-    __tablename__ = "Permission"
+    __tablename__ = "permissions"
 
     id: Mapped[int]                        = mapped_column(primary_key=True, autoincrement=True)
     name: Mapped[str]                      = mapped_column(String, unique=True)
@@ -44,10 +44,10 @@ class Permission(Base):
 class UserPermission(Base):
     __tablename__ = "user_permissions"
 
-    userId: Mapped[int]                    = mapped_column(ForeignKey("users.id"), primary_key=True, name="user_id")
-    permissionId: Mapped[int]               = mapped_column(ForeignKey("Permission.id"), primary_key=True, name="permission_id")
-    grantedAt: Mapped[datetime]             = mapped_column(default=func.now(), name="granted_at")
+    user_id: Mapped[int]                    = mapped_column(ForeignKey("users.id"), primary_key=True, name="user_id")
+    permission_id: Mapped[int]              = mapped_column(ForeignKey("permissions.id"), primary_key=True, name="permission_id")
+    granted_at: Mapped[datetime]            = mapped_column(default=func.now(), name="granted_at")
     user: Mapped["User"]                    = relationship(back_populates="user_permissions")
     permissions: Mapped[List["Permission"]] = relationship(back_populates="permission")
     def __repr__(self) -> str:
-        return f"UserPermission(user_id={self.userId}, permission_id={self.permissionId}"
+        return f"UserPermission(user_id={self.user_id}, permission_id={self.permission_id}"
