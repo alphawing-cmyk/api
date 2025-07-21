@@ -1,4 +1,5 @@
 from pydantic import BaseModel, field_validator
+from pydantic_core import PydanticCustomError
 from typing import Optional
 from enum import Enum
 from datetime import datetime, timezone
@@ -35,8 +36,7 @@ class ApiStatusEnum(str, Enum):
     active = "active"
     disabled = "disabled"
 
-class ApiBody(BaseModel):
-    id: int
+class AddApiBody(BaseModel):
     user_id: int
     platform: BrokerEnum
     service_level: AccountTypeEnum
@@ -44,7 +44,7 @@ class ApiBody(BaseModel):
     secret: Optional[str] = None
     access_token: Optional[str] = None
     refresh_token: Optional[str] = None
-    expiration: Optional[str] = None
+    expiration: Optional[datetime] = None
     state: Optional[str] = None
     scope: Optional[str] = None
     status: ApiStatusEnum
@@ -70,6 +70,28 @@ class ApiBody(BaseModel):
             return encrypt(v)
         else:
             return v
+        
+    @field_validator('expiration', mode='before')
+    def add_utc_to_expiration(cls, v):
+        if v is None:
+            return None
+
+        if isinstance(v, str):
+            try:
+                # Replace 'Z' with '+00:00' to parse with fromisoformat
+                v = datetime.fromisoformat(v.replace("Z", "+00:00"))
+            except ValueError:
+                raise PydanticCustomError(
+                    "datetime_parsing_error",
+                    "Could not parse expiration datetime string"
+                )
+
+        if isinstance(v, datetime):
+            if v.tzinfo is None:
+                return v.replace(tzinfo=timezone.utc)
+            return v
+
+        raise TypeError("Invalid type for expiration datetime")
     
     @field_validator('refresh_token')
     def encrypt_refresh_token(cls, v:str):
@@ -125,14 +147,5 @@ class ApiOutSchema(BaseModel):
         else:
             return v
         
-    @field_validator('expiration')
-    def add_utc_to_expiration(cls, v):
-        if v is None:
-            return None
-        if isinstance(v, datetime):
-            if v.tzinfo is None:
-                return v.replace(tzinfo=timezone.utc)
-        return v
-
     class Config:
         from_attributes = True
