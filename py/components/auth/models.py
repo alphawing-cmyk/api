@@ -29,7 +29,7 @@ class User(Base):
     forgot_token: Mapped[Optional[str]]                            = mapped_column(String(255))
     user_permissions: Mapped[List["UserPermission"]]               = relationship(back_populates="user")
     accounts: Mapped[List["components.accounts.models.Account"]]   = relationship("Account", back_populates="user")
-    # apis: Mapped[List["components.api.models.Api"]]              = relationship("Api", back_populates="user")
+    apis: Mapped[List["components.api.models.Api"]]                = relationship("Api", back_populates="user")
 
 
 class Permission(Base):
