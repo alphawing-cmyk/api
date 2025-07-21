@@ -73,28 +73,13 @@ class AddApiBody(BaseModel):
         
     @field_validator('expiration', mode='before')
     def add_utc_to_expiration(cls, v):
-
-        print(v)
-        print(isinstance(v, str))
-
         if v is None:
             return None
 
         if isinstance(v, str):
-            try:
-                return datetime.fromtimestamp(v)
-            except ValueError:
-                raise PydanticCustomError(
-                    "datetime_parsing_error",
-                    "Could not parse expiration datetime string"
-                )
-
-        if isinstance(v, datetime):
-            if v.tzinfo is None:
-                return v.replace(tzinfo=None)
-            return v
-
-        raise TypeError("Invalid type for expiration datetime")
+            return datetime.fromisoformat(v)
+        return v
+            
     
     @field_validator('refresh_token')
     def encrypt_refresh_token(cls, v:str):
