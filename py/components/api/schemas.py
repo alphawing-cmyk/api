@@ -31,6 +31,9 @@ class ApiUserInfo(BaseModel):
     last_name: str
     username: str
 
+    class Config:
+        from_attributes = True
+
 class ApiStatusEnum(str, Enum):
     active = "active"
     disabled = "disabled"
@@ -91,6 +94,61 @@ class AddApiBody(BaseModel):
 class DeleteApiBody(BaseModel):
     id: int
 
+
+class UpdateApiBody(BaseModel):
+    id: int
+    platform: BrokerEnum
+    service_level: AccountTypeEnum
+    api_key: Optional[str] = None
+    secret: Optional[str] = None
+    access_token: Optional[str] = None
+    refresh_token: Optional[str] = None
+    expiration: Optional[datetime] = None
+    state: Optional[str] = None
+    scope: Optional[str] = None
+    status: ApiStatusEnum
+    nickname: Optional[str] = None
+
+    @field_validator('api_key')
+    def encrypt_api_key(cls, v:str):
+        if v != None and len(v) >=1:
+            return encrypt(v)
+        else:
+            return v
+    
+    @field_validator('secret')
+    def encrypt_secret(cls, v:str):
+        if v != None and len(v) >=1:
+            return encrypt(v)
+        else:
+            return v
+    
+    @field_validator('access_token')
+    def encrypt_access_token(cls, v:str):
+        if v != None and len(v) >=1:
+            return encrypt(v)
+        else:
+            return v
+        
+    @field_validator('expiration', mode='before')
+    def add_utc_to_expiration(cls, v):
+        if v is None:
+            return None
+
+        if isinstance(v, str):
+            # Note - We need to make this TZ aware
+            return datetime.fromisoformat(v).replace(tzinfo=None)
+        return v
+            
+    
+    @field_validator('refresh_token')
+    def encrypt_refresh_token(cls, v:str):
+        if v != None and len(v) >=1:
+            return encrypt(v)
+        else:
+            return v
+
+
 class ApiOutSchema(BaseModel):
     id: int
     user_id: int
@@ -100,12 +158,11 @@ class ApiOutSchema(BaseModel):
     secret: Optional[str] = None
     access_token: Optional[str] = None
     refresh_token: Optional[str] = None
-    expiration_date: Optional[datetime] = None
+    expiration: Optional[datetime] = None
     state:  Optional[str] = None
     scope:  Optional[str] = None
     user: ApiUserInfo
     status: ApiStatusType
-    expiration: Optional[datetime] = None
     nickname: Optional[str] = None
 
     @field_validator('api_key')

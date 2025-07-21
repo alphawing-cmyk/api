@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Request, Body
+from fastapi import APIRouter, Depends, HTTPException, status, Request
 from fastapi.responses import JSONResponse
 from fastapi_pagination import Page
 from fastapi_pagination.ext.sqlalchemy import paginate
@@ -8,9 +8,14 @@ from sqlalchemy.orm import joinedload, selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 from components.database import get_session
 from components.auth.utils import RBAChecker, ValidateJWT
-from components.auth.models import User
+from fastapi.encoders import jsonable_encoder
 from .models import Api
-from .schemas import  AddApiBody, ApiOutSchema, DeleteApiBody
+from .schemas import  (
+    AddApiBody, 
+    ApiOutSchema, 
+    DeleteApiBody, 
+    UpdateApiBody
+)
 
 
 router = APIRouter()
@@ -137,20 +142,76 @@ async def delete_ticker(
     return {"message": "Api record deleted successfully"}
 
 
+@router.put(
+    "/update", 
+    dependencies=[Depends(RBAChecker(roles=['admin','client','demo'], permissions=None))]
+)
+async def update_api_record(
+        data: UpdateApiBody, 
+        session: AsyncSession = Depends(get_session),
+        user: dict = Depends(ValidateJWT)
+):
+    try:
+        user_id = user.get("id")
 
-# stmt   = select(Api).where(Api.id == data.id)
-# result = await session.execute(stmt)
-# api    = result.scalar_one_or_none()
+
+        # === Step 1: Find api record ===
+        result  = await session.execute(
+                    select(Api)
+                    .options(selectinload(Api.user))
+                    .where(Api.id == data.id)
+                    .where(Api.user_id == user.get("id"))
+                )
+        api     = result.scalar_one_or_none()
+
+        if api is None:
+            return JSONResponse(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                content={
+                    "success": False,
+                    "error": "Api record is not found."
+                }
+            )
+        
+        if api.user_id != int(user.get("id")):
+            return JSONResponse(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                content={
+                    "success": False,
+                    "error": "Api record does not belong to this user."
+                }
+            )
+
+        # === Step 2: Prepare update data ===
+        update_data = data.model_dump(exclude_none=True)
 
 
-# if api is None:
-#     return JSONResponse(
-#     status_code=status.HTTP_404_NOT_FOUND,
-#     content={
-#         "success": True,
-#         "message": "Api record not found"
-#     },
-# )
+        # === Step 3: Run update query ===
+        stmt = (
+            update(Api)
+            .where(Api.id == data.id)
+            .values(**update_data)
+            .execution_options(synchronize_session="fetch")
+        )
+        await session.execute(stmt)
+        await session.commit()
+
+        # === Step 4: Fetch and return updated Api Record ===
+        await session.refresh(api)
+
+        return JSONResponse(
+            status_code=status.HTTP_200_OK,
+            content={
+                "success": True,
+                "message": "Successfully updated api record.",
+                "data": jsonable_encoder(ApiOutSchema.model_validate(api).model_dump())
+            },
+        )
+
+    except Exception as e:
+        print(e)
+        raise HTTPException(status_code=500, detail=f"Internal Server Error: {e}")
+
 
 @router.get(
     "/all", 
