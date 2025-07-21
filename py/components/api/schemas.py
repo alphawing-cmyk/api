@@ -7,7 +7,6 @@ from components.utils import decrypt, encrypt
 from components.accounts.models import BrokerEnum, AccountTypeEnum
 
 
-
 class Broker(str,Enum):
     tradestation        = "tradestation"
     alpaca              = "alpaca"
@@ -77,7 +76,8 @@ class AddApiBody(BaseModel):
             return None
 
         if isinstance(v, str):
-            return datetime.fromisoformat(v)
+            # Note - We need to make this TZ aware
+            return datetime.fromisoformat(v).replace(tzinfo=None)
         return v
             
     
@@ -88,7 +88,8 @@ class AddApiBody(BaseModel):
         else:
             return v
 
-
+class DeleteApiBody(BaseModel):
+    id: int
 
 class ApiOutSchema(BaseModel):
     id: int

@@ -10,7 +10,7 @@ from components.database import get_session
 from components.auth.utils import RBAChecker, ValidateJWT
 from components.auth.models import User
 from .models import Api
-from .schemas import  AddApiBody, ApiOutSchema
+from .schemas import  AddApiBody, ApiOutSchema, DeleteApiBody
 
 
 router = APIRouter()
@@ -19,7 +19,7 @@ router = APIRouter()
     "/add",
     dependencies=[Depends(RBAChecker(roles=['admin', 'client', 'demo'], permissions=None))]
 )
-async def add_ticker(
+async def add_api_record(
     data: AddApiBody,
     session: AsyncSession = Depends(get_session),
     user: dict = Depends(ValidateJWT)
@@ -64,6 +64,77 @@ async def add_ticker(
             detail="Could not process, please try again"
         )
 
+
+@router.get(
+    "/stats",
+    dependencies=[Depends(RBAChecker(roles=["admin", "client", "demo"], permissions=None))]
+)
+async def get_brokers(
+    session: AsyncSession = Depends(get_session),
+    user: dict = Depends(ValidateJWT)
+):
+    try:
+        stats = {"active": 0, "disabled": 0, "total": 0}
+
+        result = await session.execute(
+            text(
+                """
+                SELECT status, count(status) as status_count
+                FROM api
+                WHERE user_id = :user_id
+                GROUP BY status
+                """
+            ),
+            {"user_id": user.get("id")},
+        )
+        rows = result.mappings().all()
+
+        for r in rows:
+            if r["status"] == "active":
+                stats["active"] = r["status_count"]
+            elif r["status"] == "disabled":
+                stats["disabled"] = r["status_count"]
+
+        stats["total"] = stats["active"] + stats["disabled"]
+
+        return {
+            "success": True,
+            "stats": stats,
+            "message": "Got successfully",
+        }
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Internal Server Error: {e}")
+
+
+@router.delete(
+    "/delete",
+    dependencies=[
+        Depends(RBAChecker(roles=['admin'], permissions=None))]
+)
+async def delete_ticker(
+    data: DeleteApiBody,
+    session: AsyncSession = Depends(get_session),
+    user: dict = Depends(ValidateJWT)
+):
+    # Look up the api record
+    result = await session.execute(select(Api).where(Api.id == data.id).where(Api.user_id == user.get("id")))
+    api    = result.scalar_one_or_none()
+
+    if not api:
+        return JSONResponse(
+            status_code=status.HTTP_404_NOT_FOUND,
+            content={
+                "success": False,
+                "message": "Api record not found."
+            },
+        )
+
+    # Delete and commit
+    await session.delete(api)
+    await session.commit()
+
+    return {"message": "Api record deleted successfully"}
 
 
 
