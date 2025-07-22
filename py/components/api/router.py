@@ -74,7 +74,7 @@ async def add_api_record(
     "/stats",
     dependencies=[Depends(RBAChecker(roles=["admin", "client", "demo"], permissions=None))]
 )
-async def get_brokers(
+async def get_stats(
     session: AsyncSession = Depends(get_session),
     user: dict = Depends(ValidateJWT)
 ):
@@ -236,3 +236,32 @@ async def get_api_records_by_user(
         query = query.filter(Api.nickname.ilike(f"%{queryParams['nickname']}%"))
 
     return await paginate(session,query=query)
+
+
+@router.get(
+    "/serviceTypes",
+    dependencies=[Depends(RBAChecker(roles=["admin", "client", "demo"], permissions=None))]
+)
+async def get_brokers(
+    session: AsyncSession = Depends(get_session),
+):
+    try:
+        sql = text("""
+            SELECT enumlabel
+            FROM pg_enum
+            JOIN pg_type ON pg_enum.enumtypid = pg_type.oid
+            WHERE typname = 'AccountType'
+            ORDER BY enumsortorder;
+        """)
+        result      = await session.execute(sql)
+        enum_values = result.fetchall()
+        serviceTypes = [row.enumlabel for row in enum_values]
+
+        return {
+            "success": True,
+            "serviceTypes": serviceTypes,
+            "message": "Got service types successfully",
+        }
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Internal Server Error: {e}")

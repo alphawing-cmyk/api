@@ -3,10 +3,9 @@ import jwt
 import base64
 import json
 import secrets
-import datetime as dt
 from config import settings
 from typing import List, Optional
-from .models import User, UserPermission, Permission
+from .models import User, UserPermission
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession

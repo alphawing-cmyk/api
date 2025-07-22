@@ -1,6 +1,6 @@
 from sqlalchemy import  String, ForeignKey, BigInteger, Numeric, DateTime, Integer, Date, Text, JSON
 from datetime import datetime, date as dtDate
-from sqlalchemy.orm import Mapped, mapped_column, relationship, DeclarativeBase
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 from components.database import Base
 from typing import List
 
