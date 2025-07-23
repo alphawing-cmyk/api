@@ -9,6 +9,7 @@ from components.auth.router import router as auth_router
 from components.symbols.router import router as symbols_router
 from components.accounts.router import router as accounts_router
 from components.api.router import router as api_router
+from components.permissions.router import router as permissions_router
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator:
@@ -68,6 +69,12 @@ app.include_router(
     api_router,
     prefix="/api",
     tags=["Api"],
+)
+
+app.include_router(
+    permissions_router,
+    prefix="/permissions",
+    tags=["Permissions"],
 )
 
 

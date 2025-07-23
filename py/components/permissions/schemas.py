@@ -1,6 +1,16 @@
-from pydantic import BaseModel, field_validator
-from pydantic_core import PydanticCustomError
+from pydantic import BaseModel
 from typing import Optional
-from enum import Enum
-from datetime import datetime, timezone
-from components.utils import decrypt, encrypt
+
+class AddPermission(BaseModel):
+    name: str
+    description: str
+
+class UpdatePermission(AddPermission):
+    id: int
+
+class DeletePermission(BaseModel):
+    id: int
+
+class PermissionUserLink(BaseModel):
+    userId: int
+    permissionId: int
