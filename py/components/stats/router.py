@@ -25,6 +25,7 @@ async def get_data(
     params: StatsParams,
     session: AsyncSession = Depends(get_session),
 ):
+    print(params)
     stmt = select(
         Historical.id, 
         Historical.custom_id, 
@@ -49,8 +50,8 @@ async def get_data(
     .where(Historical.source == params.source)
     
     results = await session.execute(stmt)
-    # data    = results.mappings().all()
-    # df      = pd.DataFrame(data)
+    data    = results.mappings().all()
+    df      = pd.DataFrame(data)
     data   = [dict(row) for row in results.mappings()]
     return data
 
