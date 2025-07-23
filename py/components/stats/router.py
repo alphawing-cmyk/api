@@ -49,7 +49,8 @@ async def get_data(
     .where(Historical.source == params.source)
     
     results = await session.execute(stmt)
-    data    = results.mappings().all()
-    df      = pd.DataFrame(data)
-    return df.to_dict(orient='records')
+    # data    = results.mappings().all()
+    # df      = pd.DataFrame(data)
+    data   = [dict(row) for row in results.mappings()]
+    return data
 
