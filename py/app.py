@@ -10,6 +10,7 @@ from components.symbols.router import router as symbols_router
 from components.accounts.router import router as accounts_router
 from components.api.router import router as api_router
 from components.permissions.router import router as permissions_router
+from components.stats.router import router as stats_router
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator:
@@ -77,5 +78,10 @@ app.include_router(
     tags=["Permissions"],
 )
 
+app.include_router(
+    stats_router,
+    prefix="/stats",
+    tags=["Stats"],
+)
 
 add_pagination(app)
