@@ -1,11 +1,12 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Request
 from fastapi.responses import JSONResponse
+from fastapi.encoders import jsonable_encoder
 from components.database import get_session
 from sqlalchemy.ext.asyncio import AsyncSession
 from .utils import RBAChecker, ValidateJWT, generate_jwt_keys, forgotToken, ValidateJWTByToken
 from fastapi_pagination import Page
 from fastapi_pagination.ext.sqlalchemy import paginate
-from sqlalchemy import select, update, or_
+from sqlalchemy import select, update, or_, func
 from sqlalchemy.orm import joinedload, selectinload
 from .schemas import (
     UserSchema,
@@ -13,13 +14,15 @@ from .schemas import (
     RegisterBody,
     ForgotPasswordBody,
     ResetPasswordBody,
-    UpdateUserBody
+    UpdateUserBody,
+    ReviewIn,
+    ReviewOut
 )
-from .models import User
+from .models import User, Reviews
 import bcrypt
 from components.utils import get_cookie_options
 from components.services.emailer import Emailer
-from typing import Optional
+from typing import Optional, Annotated, List
 
 router = APIRouter()
 
@@ -399,3 +402,32 @@ async def refresh_token(
 async def get_users(session: AsyncSession = Depends(get_session)):
     query = select(User).options(joinedload(User.user_permissions))
     return await paginate(session, query=query)
+
+
+
+@router.post("/review/add", description="Add New Review", response_model=None)
+async def add_new_review(
+    review: ReviewIn,
+    session: Annotated[AsyncSession,Depends(get_session)],
+    user: dict = Depends(ValidateJWT) 
+):
+	# Check if review exists first otherwise store review
+	response = await session.execute(select(func.count(Reviews.user_id)).where(Reviews.user_id == token.id))
+	if response.scalar() >=1:
+		raise HTTPException(status_code=420, detail = "A review already exists")
+	else:
+		review.user_id = user.get("id")
+		record = Reviews(**review.dict())
+		session.add(record)
+		await session.commit()
+		content  = jsonable_encoder({"status": "Successfully added review."})
+		return JSONResponse(content=content, status_code=200)
+
+
+@router.get("/review/all", description="Get latest 9 reviews", response_model=List[ReviewOut])
+async def get_reviews(
+			session: Annotated[AsyncSession,Depends(get_session)] 
+):
+	# Return most recent 9 reviews
+	response = await session.execute(select(Reviews).limit(10).order_by(desc(Reviews.date_created)))
+	return response

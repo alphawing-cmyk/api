@@ -1,6 +1,6 @@
 from enum import Enum
-from sqlalchemy import  String, ForeignKey, Text, Enum as SAENUM, func, Boolean
-from datetime import datetime
+from sqlalchemy import  String, ForeignKey, Text, Enum as SAENUM, func, Boolean, Date, Integer
+from datetime import datetime, date
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from typing import Optional, List
 from components.database import Base
@@ -51,3 +51,16 @@ class UserPermission(Base):
     permissions: Mapped[List["Permission"]] = relationship(back_populates="permission")
     def __repr__(self) -> str:
         return f"UserPermission(user_id={self.user_id}, permission_id={self.permission_id}"
+    
+class Reviews(Base):
+    __tablename__              = "reviews"
+    id: Mapped[int]            = mapped_column(primary_key=True, index=True)
+    first_name: Mapped[str]    = mapped_column(String(length=255), nullable=False)
+    last_name: Mapped[str]     = mapped_column(String(length=255), nullable=False)
+    message: Mapped[str]       = mapped_column(Text, nullable=False)
+    rating: Mapped[int]        = mapped_column(Integer, nullable=False)
+    user_id: Mapped[int]       = mapped_column(Integer, ForeignKey("users.id"), nullable=False)
+    date_created: Mapped[date] = mapped_column(Date, default=func.now(), nullable=False)
+
+    def __repr__(self):
+        return f"{self.__tablename__} | name = {self.first_name} {self.last_name} | rating = {self.rating}"

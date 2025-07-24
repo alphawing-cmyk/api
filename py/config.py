@@ -34,8 +34,9 @@ class Settings(BaseSettings):
     mailgun_sender: str | None = None
     mailgun_domain: str | None = None
 
-    # Optional RabbitMQ
-    rabbitmq_url: str | None = None
+    # Github
+    github_personal_token: str | None = None
+    github_api_version: str | None = None
 
     class Config:
         env_file = ".env"

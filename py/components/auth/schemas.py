@@ -1,7 +1,7 @@
-from pydantic import BaseModel, EmailStr, model_validator, EmailStr
+from pydantic import BaseModel, EmailStr, model_validator, EmailStr, Field
 from enum import Enum
 from typing import Optional, List, Self
-from datetime import datetime
+from datetime import datetime, date
 
 
 class Role(str, Enum):
@@ -76,3 +76,23 @@ class UpdateUserBody(BaseModel):
     email: Optional[EmailStr] = None
     company: Optional[str] = None
     password: Optional[str] = None
+
+class ReviewIn(BaseModel):
+	first_name: str
+	last_name: str
+	message: str
+	rating: int = Field(None, ge=1, le=5)
+	user_id: Optional[int] = None
+
+
+class ReviewOut(BaseModel):
+	id: int
+	first_name: str
+	last_name: str
+	message: str
+	rating: int = Field(None, ge=1, le=5)
+	date_created: date
+
+	
+	class Config:
+		from_attributes = True

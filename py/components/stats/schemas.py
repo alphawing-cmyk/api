@@ -11,3 +11,12 @@ class StatsParams(BaseModel):
         lambda: [{"name": "ma", "period": "50"}, {"name": "ma", "period": "200"}]
     )
     source: str = "POLYGON"
+
+class GitLab(BaseModel):
+	namespace: str
+	repo: str
+
+class Github(BaseModel):
+	owner: str
+	repo: str
+	token: Optional[str] = None
