@@ -8,7 +8,7 @@ class StatsParams(BaseModel):
     from_date: date = date.today() - timedelta(days=100)
     to_date: date = date.today()
     indicators: List[dict[str, Any]] = Field(default_factory=
-        lambda: [{"name": "ma", "period": "50"}, {"name": "ma", "period": "200"}]
+        lambda: [{"name": "MA", "period": "50"}]
     )
     source: str = "POLYGON"
 

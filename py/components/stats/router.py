@@ -16,7 +16,8 @@ from time import time
 import aiohttp
 from config import settings
 import re
-
+from components.services.indicators import Indicators
+from .utils import setHistoricalDFColTypes
 
 
 router = APIRouter()
@@ -40,7 +41,7 @@ async def get_data(
         Historical.duration,
         Historical.open,
         Historical.low,
-        Historical.open,
+        Historical.high,
         Historical.close,
         Historical.adj_close,
         Historical.vwap,
@@ -54,11 +55,13 @@ async def get_data(
     .where(Historical.ticker_id == params.ticker_id) \
     .where(Historical.source == params.source)
     
-    results = await session.execute(stmt)
-    data    = results.mappings().all()
-    df      = pd.DataFrame(data)
-    data   = [dict(row) for row in results.mappings()]
-    return data
+    results   = await session.execute(stmt)
+    data      = results.mappings().all()
+    df        = pd.DataFrame(data)
+    indicator = Indicators(df, params.indicators)
+    indicator.processIndicators()
+    df        = indicator.getDf()
+    return df.to_dict(orient="records")
 
 
 
