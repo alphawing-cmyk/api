@@ -17,7 +17,6 @@ import aiohttp
 from config import settings
 import re
 from components.services.indicators import Indicators
-from .utils import setHistoricalDFColTypes
 
 
 router = APIRouter()
@@ -61,7 +60,11 @@ async def get_data(
     indicator = Indicators(df, params.indicators)
     indicator.processIndicators()
     df        = indicator.getDf()
-    return df.to_dict(orient="records")
+
+    returnObj = {
+         "data":  df.to_dict(orient="records")
+    }
+    return returnObj
 
 
 

@@ -21,39 +21,41 @@ export const meta: MetaFunction = () => {
 };
 
 export async function loader() {
-  try {
+  // try {
 
-    const data = {
-      owner: "alphawing-cmyk",
-      repo: "Alpha-Wing",
-    };
+  //   const data = {
+  //     owner: "alphawing-cmyk",
+  //     repo: "Alpha-Wing",
+  //   };
 
-    const res = await fetch(getApiUrl("strategies") + "/misc/github/repo", {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(data)
-    });
-    let commitCount = await res.json();
-    return Response.json({
-      status: "success",
-      ok: true,
-      data: commitCount,
-      error: undefined,
-      _action: "fetchCommits"
-    });
-  } catch (err) {
-    return Response.json({
-      status: "failed",
-      ok: false,
-      error: err,
-      _action: "fetchCommits"
-    },
-      {
-        status: 404
-      });
-  }
+  //   const res = await fetch(getApiUrl("strategies") + "/misc/github/repo", {
+  //     method: 'POST',
+  //     headers: {
+  //       'Content-Type': 'application/json',
+  //     },
+  //     body: JSON.stringify(data)
+  //   });
+  //   let commitCount = await res.json();
+  //   return Response.json({
+  //     status: "success",
+  //     ok: true,
+  //     data: commitCount,
+  //     error: undefined,
+  //     _action: "fetchCommits"
+  //   });
+  // } catch (err) {
+  //   return Response.json({
+  //     status: "failed",
+  //     ok: false,
+  //     error: err,
+  //     _action: "fetchCommits"
+  //   },
+  //     {
+  //       status: 404
+  //     });
+  // }
+
+  return Response.json({});
 }
 
 export async function action({ request }: ActionFunctionArgs) {

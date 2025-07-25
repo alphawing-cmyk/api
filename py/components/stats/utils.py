@@ -2,7 +2,9 @@ import pandas as pd
 import numpy as np
 
 def setHistoricalDFColTypes(df: pd.DataFrame):
-    df              = df.copy()
+    if df.empty:
+        return pd.DataFrame()
+    df              = df.copy() 
     df["adj_close"] = pd.to_numeric(df["adj_close"]).round(decimals=2).replace({np.nan: None})
     df["close"]     = pd.to_numeric(df["close"]).round(decimals=2).replace({np.nan: None})
     df["open"]      = pd.to_numeric(df["open"]).round(decimals=2).replace({np.nan: None})
