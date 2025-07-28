@@ -8,7 +8,7 @@ import { getSession, setUserSession } from "~/lib/session";
 
 export async function action({ request }: ActionFunctionArgs) {
   const formData = await request.formData();
-  let res = await fetch(getApiUrl("settings") as string + "/login", {
+  let res = await fetch(getApiUrl("py") as string + "/login", {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

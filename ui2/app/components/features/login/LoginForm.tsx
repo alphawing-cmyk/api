@@ -56,8 +56,8 @@ const LoginForm = () => {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-[calc(100vh-150px)] px-4">
-      <Card className="w-full max-w-md shadow-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#1a1a1a] rounded-2xl transition-all">
+    <div className="flex items-center justify-center min-h-[calc(100vh-150px)] px-4 w-[400px] maw-w-[500px]">
+      <Card className="w-full shadow-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#1a1a1a] rounded-2xl transition-all">
         <CardHeader className="text-center">
           <CardTitle className="text-2xl font-bold text-gray-800 dark:text-gray-100">
             Welcome Back 👋
