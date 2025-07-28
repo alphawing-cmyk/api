@@ -11,11 +11,6 @@ const Navbar = () => {
   const location = useLocation();
   const [theme, setTheme] = useTheme();
 
-  // useEffect(() => {
-  //   if (theme === "dark") {
-  //     setTheme(Theme.LIGHT);
-  //   }
-  // }, [location.pathname]);
 
   const scrollTo = (elementId: string | null) => {
     if (elementId) {
