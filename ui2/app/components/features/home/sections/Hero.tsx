@@ -2,39 +2,44 @@ import Typewriter from "typewriter-effect";
 
 const Hero = () => {
   return (
-    <div className="text-white bg-tmLightBlack h-screen w-full" id="home">
-      <div
-        className="max-w-[800px] w-full h-full mx-auto text-center
-                 flex flex-col justify-center items-center"
-      >
-        <p className="text-tmGolden font-bold p-2 uppercase">
-          let's automate the markets
-        </p>
-        <div className="flex justify-center items-center">
-          <p className="md:text-5xl sm:text-4xl text-xl font-bold py-4">
-            Control your trades with a click of a button
-            <br />
-            <Typewriter
-              component={"span"}
-              options={{
-                strings: ["Alpaca", "Oanda", "Kraken"],
-                autoStart: true,
-                loop: true,
-                wrapperClassName:
-                  "md:text-5xl sm:text-4xl text-xl font-bold pl-2 md:pl-4 text-blue-400",
-              }}
-            />
-          </p>
+    <section
+      id="home"
+      className="bg-tmLightBlack text-white h-screen w-full flex items-center justify-center"
+    >
+      <div className="max-w-3xl text-center px-4 animate-fade-in">
+        <h1 className="text-tmGolden text-sm sm:text-base font-semibold uppercase tracking-widest mb-4">
+          Let's automate the markets
+        </h1>
+
+        <h2 className="text-3xl sm:text-5xl font-bold mb-2">
+          Control your trades
+        </h2>
+        <h2 className="text-3xl sm:text-5xl font-bold mb-6">
+          with a click of a button
+        </h2>
+
+        <div className="text-xl sm:text-3xl font-bold text-blue-400 h-[50px] sm:h-[60px] flex items-center justify-center">
+          <Typewriter
+            options={{
+              strings: ["Alpaca", "Oanda", "Kraken"],
+              autoStart: true,
+              loop: true,
+              wrapperClassName: "inline-block",
+              cursorClassName: "text-blue-400",
+            }}
+          />
         </div>
-        <p className="md:text-2xl text-xl font-bold text-[#d6d6d6] px-4">
-          Featuring state of the art trading algorithms designed to optmize your
-          profits across various markets
+
+        <p className="text-[#d6d6d6] text-base sm:text-xl mt-6 mb-8 px-2 sm:px-0">
+          Featuring state-of-the-art trading algorithms designed to optimize
+          your profits across various markets.
         </p>
-        <button className="bg-tmGolden w-[200px] rounded-md font-medium my-6 mx-auto px-6 py-3 text-black">
+
+        <button className="bg-tmGolden text-black font-medium px-8 py-3 rounded-md hover:scale-105 transition-transform duration-200">
           Get Started
         </button>
       </div>
-    </div>
+    </section>
   );
 };
 

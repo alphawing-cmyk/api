@@ -1,5 +1,7 @@
-import { IconProps } from "./types";
-
+interface IconProps {
+  size?: number | string;
+  className?: string;
+}
 const GitlabIcon: React.FC<IconProps> = ({ size = 24, className = "" }) => {
   return (
     <svg

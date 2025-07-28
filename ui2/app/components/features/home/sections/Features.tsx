@@ -1,145 +1,108 @@
-import Laptop from "~/images/home/laptop.jpg";
 import FeatureModal from "../components/FeatureModal";
 import FeatureDescriptions from "../data/FeatureDescriptions";
-import { Waypoints, ChartNoAxesCombined, RefreshCw, Shield, MessageSquare, Code  } from "lucide-react";
+import {
+  Waypoints,
+  ChartNoAxesCombined,
+  RefreshCw,
+  Shield,
+  MessageSquare,
+  Code,
+} from "lucide-react";
+
+const features = [
+  {
+    title: "Metrics",
+    icon: ChartNoAxesCombined,
+    overview: FeatureDescriptions.overviews.metrics,
+    modalDescription: FeatureDescriptions.additional.metricFeature(),
+  },
+  {
+    title: "Strategies",
+    icon: Waypoints,
+    overview: FeatureDescriptions.overviews.algos,
+    modalDescription: FeatureDescriptions.additional.algoFeatures(),
+  },
+  {
+    title: "Platform Support",
+    icon: RefreshCw,
+    overview: FeatureDescriptions.overviews.platform,
+    modalDescription: FeatureDescriptions.additional.platformFeatures(),
+  },
+  {
+    title: "Real Time Signals",
+    icon: Shield,
+    overview: FeatureDescriptions.overviews.signals,
+    modalDescription: FeatureDescriptions.additional.signalFeatures(),
+  },
+  {
+    title: "Real Time Chat",
+    icon: MessageSquare,
+    overview: FeatureDescriptions.overviews.chat,
+    modalDescription: FeatureDescriptions.additional.chatFeatures(),
+  },
+  {
+    title: "Custom Scripts",
+    icon: Code,
+    overview: FeatureDescriptions.overviews.scripts,
+    modalDescription: FeatureDescriptions.additional.scriptFeatures(),
+  },
+];
 
 const Features = () => {
   return (
-    <div className="w-full bg-white py-16 px-4" id="features">
-      <div className="mx-auto max-w-[1240px] grid md:grid-cols-2">
-        <img src={Laptop} alt="/" className="w-[500px] mx-auto my-4" />
-        <div className="flex flex-col justify-center animate__animated animate__fadeIn">
-          <p className="text-green-500 text-xl font-bold">
+    <div className="w-full bg-background py-20 px-4" id="features">
+      {/* Hero Row */}
+      <div className="mx-auto max-w-[1240px] grid md:grid-cols-2 items-center gap-8">
+        <img
+          src="/home/laptop.jpg"
+          alt="Trading laptop"
+          className="w-[500px] mx-auto rounded-xl shadow-lg"
+        />
+        <div className="flex flex-col justify-center animate__animated animate__fadeInUp">
+          <p className="text-green-600 text-lg font-semibold tracking-wide">
             Alpha Wing Trading Platform
           </p>
-          <h1 className="md:text-4xl sm:text-3xl text-2xl font-bold py-2">
+          <h2 className="text-3xl md:text-4xl font-bold py-2">
             Manage everything in one platform
-          </h1>
-          <p className="text-slate-500">
-            Built using a powerful Python backend, price data is automatically
-            updated in real time. Strategies are continously run across many
-            markets such as stocks, crypto, and currency, and signals are then
-            generated. Users have the ability to have our system automatically
-            trade your account or trade manually.
+          </h2>
+          <p className="text-muted-foreground leading-relaxed">
+            Built using a powerful Python backend, price data is updated in real time. Strategies continuously run across stocks, crypto, and currencies, generating signals for manual or automated trading.
           </p>
         </div>
       </div>
-      <div className="grid md:grid-cols-3 gap-x-10 gap-y-[75px] w-full relative mt-32 max-w-[1240px] mx-auto">
-        {/*------------ Feature Start -----------------*/}
-        <div className="bg-white rounded-xl shadow-2xl relative">
-            <ChartNoAxesCombined  size="4em" className="w-14 p-3 bg-indigo-600 text-white rounded-lg absolute top-[-25px] left-[45px]"  />
-          <div className="p-8">
-            <h3 className="font-bold text-2xl my-6">Metrics</h3>
-            <div className="text-gray-600 sm:text-sm md:text-xl pb-3 h-[200px]">
-              {FeatureDescriptions.overviews.metrics}
-            </div>
-            <div className="flex justify-center">
-              <FeatureModal
-                btnTitle="More Info"
-                modalTitle="Metrics"
-                modalDescription={FeatureDescriptions.additional.metricFeature()}
-              />
-            </div>
-          </div>
-        </div>
-        {/*------------ Feature End -----------------*/}
 
-        {/*------------ Feature Start -----------------*/}
-        <div className="bg-white rounded-xl shadow-2xl relative">
-          <Waypoints className="w-14 p-3 bg-indigo-600 text-white rounded-lg absolute top-[-25px] left-[45px]" size="4em"  />
-          <div className="p-8">
-            <h3 className="font-bold text-2xl my-6">Strategies</h3>
-            <div className="text-gray-600 sm:text-sm md:text-xl pb-3 h-[200px]">
-              {FeatureDescriptions.overviews.algos}
-            </div>
-            <div className="flex justify-center">
-              <FeatureModal
-                btnTitle="More Info"
-                modalTitle="Strategies"
-                modalDescription={FeatureDescriptions.additional.algoFeatures()}
-              />
-            </div>
-          </div>
-        </div>
-        {/*------------ Feature End -----------------*/}
+      {/* Feature Grid */}
+      <div className="grid md:grid-cols-3 gap-x-10 gap-y-20 mt-32 max-w-[1240px] mx-auto">
+        {features.map((feature) => {
+          const Icon = feature.icon;
 
-        {/*<!---------- Feature Start ----------------->*/}
-        <div className="bg-white rounded-xl shadow-2xl relative">
-          <RefreshCw size="4em"  className="w-14 p-3 bg-indigo-600 text-white rounded-lg absolute top-[-25px] left-[45px]" />
+          return (
+            <div
+              key={feature.title}
+              className="relative bg-card rounded-2xl shadow-xl p-8 pt-14 transition-transform hover:scale-[1.02] hover:shadow-2xl group flex flex-col"
+            >
+              {/* Icon Badge */}
+              <div className="absolute top-[-30px] left-6 bg-indigo-600 text-white rounded-xl p-3 shadow-lg">
+                <Icon size={32} />
+              </div>
 
-          <div className="p-8">
-            <h3 className="font-bold text-2xl my-6">Platform Support</h3>
-            <div className="text-gray-600 sm:text-sm md:text-xl pb-3 h-[200px]">
-              {FeatureDescriptions.overviews.platform}
-            </div>
-            <div className="flex justify-center">
-              <FeatureModal
-                btnTitle="More Info"
-                modalTitle="Platform Support"
-                modalDescription={FeatureDescriptions.additional.platformFeatures()}
-              />
-            </div>
-          </div>
-        </div>
-        {/*------------ Feature End -----------------*/}
+              {/* Title & Description */}
+              <h3 className="text-xl font-semibold mb-4 text-foreground">{feature.title}</h3>
+              <p className="text-muted-foreground mb-6 min-h-[160px] text-sm md:text-base leading-relaxed">
+                {feature.overview}
+              </p>
 
-        {/*------------ Feature Start -----------------*/}
-        <div className="bg-white rounded-xl shadow-2xl relative">
-          <Shield size="4em" className="w-14 p-3 bg-indigo-600 text-white rounded-lg absolute top-[-25px] left-[45px]"  />
-
-          <div className="p-8">
-            <h3 className="font-bold text-2xl my-6">Real Time Signals</h3>
-            <div className="text-gray-600 sm:text-sm md:text-xl pb-3 h-[250px]">
-              {FeatureDescriptions.overviews.signals}
+              {/* Modal Trigger aligned to bottom */}
+              <div className="mt-auto flex justify-center">
+                <FeatureModal
+                  btnTitle="More Info"
+                  modalTitle={feature.title}
+                  modalDescription={feature.modalDescription}
+                />
+              </div>
             </div>
-            <div className="flex justify-center">
-              <FeatureModal
-                btnTitle="More Info"
-                modalTitle="Real Time Signals"
-                modalDescription={FeatureDescriptions.additional.signalFeatures()}
-              />
-            </div>
-          </div>
-        </div>
-        {/*------------ Feature End -----------------*/}
-
-        {/*-------------- Feature Start -----------------*/}
-        <div className="bg-white rounded-xl shadow-2xl relative">
-          <MessageSquare size="4em"  className="w-14 p-3 bg-indigo-600 text-white rounded-lg absolute top-[-25px] left-[45px]" fill="white"  />
-          <div className="p-8">
-            <h3 className="font-bold text-2xl my-6">Real Time Chat</h3>
-            <div className="text-gray-600 sm:text-sm md:text-xl pb-3 h-[250px]">
-              {FeatureDescriptions.overviews.chat}
-            </div>
-            <div className="flex justify-center">
-              <FeatureModal
-                btnTitle="More Info"
-                modalTitle="Chat"
-                modalDescription={FeatureDescriptions.additional.chatFeatures()}
-              />
-            </div>
-          </div>
-        </div>
-        {/*-------------- Feature End -----------------*/}
-
-        {/*-------------- Feature Start -----------------*/}
-        <div className="bg-white rounded-xl shadow-2xl relative">
-          <div className="p-8">
-            <Code size="4em" className="w-14 p-3 bg-indigo-600 text-white rounded-lg absolute top-[-25px] left-[45px]"   />
-            <h3 className="font-bold text-2xl my-6">Custom Scripts</h3>
-            <div className="text-gray-600 sm:text-sm md:text-xl pb-3 h-[250px]">
-              {FeatureDescriptions.overviews.scripts}
-            </div>
-            <div className="flex justify-center">
-              <FeatureModal
-                btnTitle="More Info"
-                modalTitle="Scripts"
-                modalDescription={FeatureDescriptions.additional.scriptFeatures()}
-              />
-            </div>
-          </div>
-        </div>
-        {/*-------------- Feature End -----------------*/}
+          );
+        })}
       </div>
     </div>
   );

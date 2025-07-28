@@ -1,6 +1,6 @@
-import XIcon from "~/images/home/XIcon";
-import DiscordIcon from "~/images/home/DiscordIcon";
-import GitlabIcon from "~/images/home/GitlabIcon";
+import XIcon from "../components/XIcon";
+import DiscordIcon from "../components/DiscordIcon";
+import GitlabIcon from "../components/GitlabIcon";
 import { useNavigate } from "@remix-run/react";
 
 function Footer() {
@@ -17,6 +17,8 @@ function Footer() {
           discretion.
         </p>
         <div className="flex justify-between md:w-[75%] my-6">
+          <img src=""   />
+
           <DiscordIcon size="2em" className="cursor-pointer" />
           <XIcon size="2em" className="cursor-pointer" />
           <GitlabIcon size="2em" className="cursor-pointer" />
