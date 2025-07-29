@@ -27,7 +27,7 @@ export async function loader() {
       repo: "Alpha-Wing",
     };
 
-    const res = await fetch(getApiUrl("strategies") + "/misc/github/repo", {
+    const res = await fetch(getApiUrl('py') + "/misc/github/repo", {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -62,7 +62,7 @@ export async function action({ request }: ActionFunctionArgs) {
   switch (formAction) {
     case "createReviewLogin": {
 
-      let res = await fetch(getApiUrl("settings") as string + "/login", {
+      let res = await fetch(getApiUrl("py") as string + "/login", {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -19,12 +19,13 @@ import {
   useRouteLoaderData,
 } from "@remix-run/react";
 import { toast } from "sonner";
-import { action } from "~/routes/register/route";
+import { action } from "~/routes/action.set-theme";
 import { useEffect, useState } from "react";
 import AckModal from "./AckModal";
 import Spinner from "~/components/ui/spinner";
 import { getRandomEmail, getRandomString } from "~/lib/utils";
 import { loader } from "~/root";
+import useHydrated from "~/hooks/use-hydrated";
 
 const formSchema = z
   .object({
@@ -55,6 +56,7 @@ const formSchema = z
     path: ["confirm_password"],
   });
 
+
 const RegisterForm = () => {
   const navigate = useNavigate();
   const submit = useSubmit();
@@ -64,6 +66,7 @@ const RegisterForm = () => {
   const { ENV } = rootLoaderData;
   const [loading, setLoading] = useState<boolean>(false);
   const [success, setSuccess] = useState<boolean>(false);
+  const hydrated = useHydrated();
 
   useEffect(() => {
     if (actionData && "success" in actionData && actionData.success) {
@@ -257,7 +260,7 @@ const RegisterForm = () => {
             )}
 
             <div className="flex flex-row justify-center pt-[20px]">
-              <Button type="submit" disabled={!ack}>
+              <Button type="submit" disabled={hydrated ? !ack : false}>
                 {loading ? (
                   <div className="mr-[5px]">
                     <Spinner color="blue-600" size="w-4 h-4" />
