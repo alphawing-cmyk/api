@@ -3,7 +3,7 @@ import { Separator } from "~/components/ui/separator";
 import Columns from "./components/table/Columns";
 import { useLoaderData, useSearchParams } from "@remix-run/react";
 import { useState } from "react";
-import MetricCard from "../MetricCard";
+import MetricCard from "../common/MetricCard";
 import { Anchor, ShieldCheck, PowerOff } from "lucide-react";
 import { DataTableServerSide } from "~/components/ui/data-table-server-side";
 import AddApiConnection from "./components/AddApiConnection";

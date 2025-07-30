@@ -1,7 +1,6 @@
 import { cn } from "~/lib/utils";
 import MobileSidebar from "./MobileSidebar";
-import UserNav from "../features/dashboard/UserNav";
-import AwLogo from "~/images/aw-logo.svg";
+import UserNav from "../features/dashboard/common/UserNav";
 import { Button } from "../ui/button";
 import { useNavigate, useLocation } from "@remix-run/react";
 import { useEffect } from "react";
@@ -31,7 +30,7 @@ const HeaderCustom: React.FC<HeaderProps> = ({ showNavigation }) => {
             target="_blank"
             className="flex flex-row items-center"
           >
-            <img src={AwLogo} height={48} width={48} />
+            <img src="./aw-logo.svg" height={48} width={48} />
             <span className="text-sm text-gray-600 pl-2 font-bold">
               Alpha Wing
             </span>

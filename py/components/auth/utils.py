@@ -12,21 +12,32 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from components.database import get_session
 from datetime import datetime, timedelta
 from config import settings
+from urllib.parse import unquote
 
-
-def DecodeBase64Token(token: str) -> dict | None:
+def DecodeBase64Token(token: str) -> dict:
     try:
-        token = token.replace('-', '+').replace('_', '/')
-        padding = len(token) % 4
-        if padding:
-            token += '=' * (4 - padding)
+        decoded_token = unquote(token)
+        padding       = len(decoded_token) % 4
 
-        decoded_bytes = base64.b64decode(token)
-        decoded_str = decoded_bytes.decode('utf-8')
-        result = json.loads(decoded_str)
-        return {'valid': True, 'claims': result}
+        if padding:
+            decoded_token += '=' * (4 - padding)
+            
+        # Decode the base64
+        claims_bytes = base64.urlsafe_b64decode(decoded_token)
+        claims_str = claims_bytes.decode('utf-8')
+        claims = json.loads(claims_str)
+        
+        return {
+            'valid': True,
+            'claims': claims,
+            'error': None
+        }
     except Exception as e:
-        return {'valid': False, 'claims': None}
+        return {
+            'valid': False,
+            'claims': None,
+            'error': str(e)
+        }
 
 
 def ValidateJWTByToken(token: str)-> dict | None:
@@ -51,16 +62,19 @@ def ValidateJWT(request: Request):
         
     if request.cookies.get('remix') != None:
         cookie  = request.cookies.get('remix')
-        parsed  = DecodeBase64Token(cookie)
-
+        
         try:
-         params = jwt.decode(parsed.get("accessToken"), settings.jwt_secret, algorithms=['HS256'])
+         decodeObj = DecodeBase64Token(cookie)
+         claims    = decodeObj.get("claims").get("user")
+         params    = jwt.decode(claims.get("accessToken"), settings.jwt_secret, algorithms=['HS256'])
+         print(params)
          return params
         except jwt.DecodeError:
            raise HTTPException(status_code=401, detail="Not Authorized")
         except jwt.InvalidTokenError:
            raise HTTPException(status_code=401, detail="Not Authorized")
         except Exception as e:
+            print(e)
             raise HTTPException(status_code=401, detail="Not Authorized")
         
     if request.cookies.get('accessToken') != None:

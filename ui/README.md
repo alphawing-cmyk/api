@@ -6,13 +6,13 @@
 
 Run the dev server:
 
-```shellscript
+```sh
 npm run dev
 ```
 
 ## Deployment
 
-First, build your app for production: d
+First, build your app for production:
 
 ```sh
 npm run build

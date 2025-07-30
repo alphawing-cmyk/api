@@ -27,13 +27,13 @@ const Tech = () => {
         </div>
         <div className="grid md:grid-cols-2 gap-4">
           <div className="flex flex-col justify-center items-center">
-            <img src={Alpaca} className="w-[150px] h-[150px] mx-auto my-4" />
+            <img src="./platforms/alpaca.svg" className="w-[150px] h-[150px] mx-auto my-4" />
           </div>
           <div className="flex flex-col justify-center items-center">
-            <img src={Kraken} className="w-[150px] h-[150px] mx-auto my-4" />
+            <img src="./platforms/krakken.svg" className="w-[150px] h-[150px] mx-auto my-4" />
           </div>
           <div className="flex flex-col justify-center items-center">
-            <img src={Oanda} className="w-[150px] h-[150px] mx-auto my-4" />
+            <img src="./platforms/oanda.svg" className="w-[150px] h-[150px] mx-auto my-4" />
           </div>
         </div>
       </div>

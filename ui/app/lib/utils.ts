@@ -3,16 +3,9 @@ import { twMerge } from "tailwind-merge";
 import { parseISO } from "date-fns";
 import { toZonedTime, format } from "date-fns-tz";
 
-export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs));
-}
 
-export function parseWebsocketMessage(message: { [key: string]: any }) {
-  try {
-    return JSON.parse(message?.data);
-  } catch (error) {
-    return message?.data;
-  }
+export function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs))
 }
 
 export function getRandomString(length: number) {
@@ -246,15 +239,15 @@ export function generateRandomData(
   return data;
 }
 
-export type ApiType = "settings" | "strategies";
+export type ApiType = "go" | "py";
 
 export function getApiUrl(type: ApiType): string | undefined {
-  if (type === "settings") {
-    return process.env.NODE_API + ":" + process.env.NODE_API_PORT;
+  if (type === "go") {
+    return process.env.GO_API;
   }
 
-  if (type === "strategies") {
-    return process.env.FASTAPI + ":" + process.env.FASTAPI_PORT;
+  if (type === "py") {
+    return process.env.PY_API;
   }
 }
 

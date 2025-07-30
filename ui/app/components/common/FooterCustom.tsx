@@ -1,6 +1,6 @@
-import XIcon from "~/images/home/XIcon";
-import DiscordIcon from "~/images/home/DiscordIcon";
-import GitlabIcon from "~/images/home/GitlabIcon";
+import XIcon from "../features/home/components/XIcon";
+import DiscordIcon from "../features/home/components/DiscordIcon";
+import GitlabIcon from "../features/home/components/GitlabIcon";
 import { useNavigate } from "@remix-run/react";
 
 function FooterCustom() {

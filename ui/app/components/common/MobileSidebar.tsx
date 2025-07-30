@@ -2,7 +2,7 @@ import { Sheet, SheetContent, SheetTrigger } from "~/components/ui/sheet";
 import { MenuIcon } from "lucide-react";
 import { useState } from "react";
 import { cn } from "~/lib/utils";
-import { navitems, NavItem } from "~/lib/navitems";
+import { NavItem, navitems } from "~/lib/navitems";
 
 const MobileSidebar = () => {
   const [open, setOpen] = useState(false);

@@ -2,7 +2,7 @@ import { X } from "lucide-react";
 import Alert from "~/components/common/Alert";
 import { useEffect, useState, useTransition } from "react";
 import { Form, useActionData } from "@remix-run/react";
-import { action } from "~/routes";
+import { action } from "~/routes/dashboard._index";
 
 
 type LoginType = {
