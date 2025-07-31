@@ -24,6 +24,7 @@
     "@radix-ui/react-switch": "^1.2.5",
     "@radix-ui/react-toast": "^1.2.14",
     "@radix-ui/react-tooltip": "^1.2.7",
+    "@react-three/fiber": "^8.18.0",
     "@remix-run/node": "^2.16.8",
     "@remix-run/react": "^2.16.8",
     "@remix-run/serve": "^2.16.8",
@@ -41,6 +42,7 @@
     "react-day-picker": "^9.8.1",
     "react-dom": "^18.2.0",
     "react-hook-form": "^7.61.1",
+    "react-konva": "^18.2.12",
     "react-spinners": "^0.17.0",
     "react-spring": "^10.0.1",
     "react-toastify": "^11.0.5",
@@ -53,7 +55,7 @@
     "zod": "^4.0.10"
   },
   "devDependencies": {
-    "@remix-run/dev": "^2.16.8",
+    "@remix-run/dev": "^2.17.0",
     "@types/react": "^18.2.20",
     "@types/react-dom": "^18.2.7",
     "@typescript-eslint/eslint-plugin": "^6.7.4",

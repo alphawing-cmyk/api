@@ -35,7 +35,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     },
     username: user?.data?.username,
     role: user?.data?.role,
-    id: user?.data.id
+    id: user?.data?.id
   });
 }
 
@@ -71,7 +71,7 @@ export default function DashboardLayout() {
         <main className="w-full pt-16">
           <ScrollArea className="h-full" type="scroll">
             <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
-              {location.pathname === "/dashboard/home" ? (
+              {location.pathname === "/dashboard" ? (
                 <div className="flex items-center justify-between space-y-2">
                   <h2 className="scroll-m-20 border-b pb-2 text-2xl font-semibold tracking-tight first:mt-0">
                     Welcome {data?.username},&nbsp;&nbsp;here are your highlights

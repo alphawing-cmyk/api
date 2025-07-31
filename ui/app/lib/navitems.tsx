@@ -25,7 +25,7 @@ export const navitems: Array<NavItem> = [
     id: 1,
     title: "Dashboard",
     icon: <LayoutDashboard className="mr-2 h-6 w-6" />,
-    href: "/dashboard/home",
+    href: "/dashboard",
     disabled: false,
     userLevel: "demo",
   },

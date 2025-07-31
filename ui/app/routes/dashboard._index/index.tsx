@@ -16,26 +16,18 @@ export type DatasetTypes = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const promises = [
-    ApiClient("py", "GET", "/account/stats", request, null),
-  ];
-
   try {
-    let responses = await Promise.all(promises);
+    let res = await ApiClient("py", "GET", "/account/stats", request, null);
     let cookieHeader;
-    const data: { [key: string]: any } = {};
+    let data: { [key: string]: any } = {};
 
-    responses.forEach(async (res) => {
-      if ("success" in res && res.success) {
-        if ("accountData" in res.data) {
-          data["accountData"] = res.data.accountData;
-        }
-      }
+    if ("success" in res && res.success === true && "data" in res) {
+      data = res.data;
+    }
 
-      if ("cookieHeader" in res && res.cookieHeader !== null && res.success) {
-        cookieHeader = res.cookieHeader;
-      }
-    });
+    if ("cookieHeader" in res && res.cookieHeader !== null && res.success) {
+      cookieHeader = res.cookieHeader;
+    }
 
     return Response.json(
       {
@@ -69,11 +61,13 @@ export default function DashboardHome() {
 
   useEffect(() => {
     if (
-      loaderData.data.accountData &&
-      loaderData.data.accountData.length >= 1
+      "data" in loaderData &&
+      loaderData.data
     ) {
       setLoading(false);
-      let data = loaderData.data.accountData[0];
+      let data = loaderData.data;
+
+      console.log(data);
       setData((prev) => {
         return {
           ...prev,
@@ -94,21 +88,21 @@ export default function DashboardHome() {
     <>
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 pt-5">
         <MetricCard
-          loading ={loading}
+          loading={loading}
           title="# of Accounts"
           value={data?.total_accounts || 0}
           icon={<Landmark className="h-6 w-6 text-muted-foreground" />}
           description={
             <span>
-              <b>{data?.total_paper_account || 0}</b> Paper Accounts,{" "}
-              <b>{data?.total_live_account || 0}</b> Live Account
+              <b>{data?.total_paper_account || 0}</b> Paper Account(s),
+              <b>{data?.total_live_account || 0}</b> Live Account(s)
             </span>
           }
           animation={true}
           decimalPlaces={0}
         />
         <MetricCard
-          loading ={loading}
+          loading={loading}
           title="Total Equity"
           value={`$${data?.current_balance?.toFixed(2) || (0).toFixed(2)}`}
           icon={<DollarSign className="h-6 w-6 text-muted-foreground" />}
@@ -122,7 +116,7 @@ export default function DashboardHome() {
           animation={true}
         />
         <MetricCard
-          loading ={loading}
+          loading={loading}
           title="Total Profit"
           value={-177.45}
           icon={<Coins className="h-6 w-6 text-muted-foreground" />}

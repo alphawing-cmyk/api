@@ -13,7 +13,7 @@ const Header = () => {
                         href={"https://alpha-wing.co"}
                         target="_blank"
                     >
-                        <img src="./aw-logo.svg" height={48} width={48} />
+                        <img src="/aw-logo.svg" height={48} width={48} />
                     </a>
                 </div>
                 <div className={cn("block lg:!hidden")}>
