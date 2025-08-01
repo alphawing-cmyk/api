@@ -1,8 +1,7 @@
 import {
-  useActionData,
+  useFetcher,
   useLoaderData,
   useMatches,
-  useSubmit,
 } from "@remix-run/react";
 import { useEffect, useState } from "react";
 import { Button } from "~/components/ui/button";
@@ -18,7 +17,7 @@ import {
 } from "~/components/ui/dialog";
 import { useToast } from "~/hooks/use-toast";
 import { Input } from "~/components/ui/input";
-import { action, loader } from "~/routes/dashboard.accounts";
+import { loader, action } from "~/routes/dashboard.accounts";
 import {
   Form,
   FormControl,
@@ -67,17 +66,16 @@ function EditAccountAction({
   initial_balance,
   current_balance,
 }: AccountCols) {
-  const submit = useSubmit();
-  const matches = useMatches();
-  const actionData = useActionData<typeof action>();
-  const success = actionData?.action === "edit_account" && actionData?.success;
-  const error = actionData?.action === "edit_account" && !actionData?.success;
+  const fetcher = useFetcher<typeof action>();
   const { toast } = useToast();
   const { brokers } = useLoaderData<typeof loader>();
   const [role, setRole] = useState<string | undefined>(undefined);
-  const layoutData = matches.find(
-    (match) => match.id === "routes/dashboard/_layout"
-  );
+  const matches = useMatches();
+
+  const success =
+    fetcher.data?.action === "edit_account" && fetcher.data?.success;
+  const error =
+    fetcher.data?.action === "edit_account" && fetcher.data?.success === false;
 
   useEffect(() => {
     if (success) {
@@ -98,6 +96,9 @@ function EditAccountAction({
   }, [success, error]);
 
   useEffect(() => {
+    const layoutData = matches.find(
+      (match) => match.id === "routes/dashboard/_layout"
+    );
     if (
       layoutData?.data &&
       typeof layoutData.data === "object" &&
@@ -105,14 +106,16 @@ function EditAccountAction({
     ) {
       setRole(layoutData.data.role as string);
     }
-  }, [layoutData]);
+  }, [matches]);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       account_num: account_num,
       nickname: nickname,
-      date_opened: date_opened ? format(parseISO(date_opened), "yyyy-MM-dd") : "",
+      date_opened: date_opened
+        ? format(parseISO(date_opened), "yyyy-MM-dd")
+        : "",
       auto_trade: auto_trade ? "true" : "false",
       broker,
       account_type,
@@ -122,9 +125,15 @@ function EditAccountAction({
     },
   });
 
-  const onSubmit = async (values: z.infer<typeof formSchema>) => {
-    console.log(values);
-    submit(values, { method: "POST" });
+  const onSubmit = (values: z.infer<typeof formSchema>) => {
+    fetcher.submit(
+      {
+        ...values,
+      },
+      {
+        method: "POST",
+      }
+    );
   };
 
   return (
@@ -143,7 +152,11 @@ function EditAccountAction({
             <DialogTitle>Edit Form</DialogTitle>
           </DialogHeader>
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="flex-1 space-y-4 overflow-y-auto pr-2">
+            <fetcher.Form
+              method="POST"
+              onSubmit={form.handleSubmit(onSubmit)}
+              className="flex-1 space-y-4 overflow-y-auto pr-2"
+            >
               <FormField
                 control={form.control}
                 name="id"
@@ -175,7 +188,6 @@ function EditAccountAction({
                   </FormItem>
                 )}
               />
-
               <FormField
                 control={form.control}
                 name="nickname"
@@ -230,7 +242,6 @@ function EditAccountAction({
                   </FormItem>
                 )}
               />
-
               <FormField
                 control={form.control}
                 name="date_opened"
@@ -244,7 +255,6 @@ function EditAccountAction({
                   </FormItem>
                 )}
               />
-
               <FormField
                 control={form.control}
                 name="initial_balance"
@@ -268,7 +278,6 @@ function EditAccountAction({
                   </FormItem>
                 )}
               />
-
               <FormField
                 control={form.control}
                 name="current_balance"
@@ -292,7 +301,6 @@ function EditAccountAction({
                   </FormItem>
                 )}
               />
-
               <FormField
                 control={form.control}
                 name="account_type"
@@ -309,7 +317,6 @@ function EditAccountAction({
                             <SelectValue placeholder="Select account type" />
                           </SelectTrigger>
                         </FormControl>
-
                         <SelectContent>
                           <SelectGroup>
                             <SelectItem
@@ -324,15 +331,13 @@ function EditAccountAction({
                             >
                               Live Account
                             </SelectItem>
-                            {role === "admin" ? (
+                            {role === "admin" && (
                               <SelectItem
                                 value="service_account"
                                 className="capitalize"
                               >
                                 Service Account
                               </SelectItem>
-                            ) : (
-                              <></>
                             )}
                           </SelectGroup>
                         </SelectContent>
@@ -342,7 +347,6 @@ function EditAccountAction({
                   </FormItem>
                 )}
               />
-
               <FormField
                 control={form.control}
                 name="auto_trade"
@@ -359,7 +363,6 @@ function EditAccountAction({
                             <SelectValue placeholder="Automated Trading?" />
                           </SelectTrigger>
                         </FormControl>
-
                         <SelectContent>
                           <SelectGroup>
                             <SelectItem value="true" className="capitalize">
@@ -376,7 +379,6 @@ function EditAccountAction({
                   </FormItem>
                 )}
               />
-
               {form.watch("auto_trade") === "true" && (
                 <Alert variant="destructive" className="col-span-4">
                   <AlertCircle className="h-4 w-4" />
@@ -398,7 +400,7 @@ function EditAccountAction({
                   </Button>
                 </DialogClose>
               </DialogFooter>
-            </form>
+            </fetcher.Form>
           </Form>
         </DialogContent>
       </Dialog>

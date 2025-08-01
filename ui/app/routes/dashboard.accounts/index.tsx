@@ -31,9 +31,7 @@ export async function action({ request }: ActionFunctionArgs) {
         auto_trade: formData.get("auto_trade") === "true" ? true : false,
       };
 
-      console.log(data);
-
-      res = await ApiClient("py", "POST", "/account/client/add", request, data);
+      res = await ApiClient("py", "POST", "/account/client/add", request, data);      
       break;
     case "delete_account":
       data = {
@@ -51,14 +49,14 @@ export async function action({ request }: ActionFunctionArgs) {
     case "edit_account":
       data = {
         id: formData.get("id"),
-        accountNum: formData.get("accountNum"),
+        account_num: formData.get("account_num"),
         nickname: formData.get("nickname"),
         broker: formData.get("broker"),
-        dateOpened: formData.get("dateOpened"),
-        initialBalance: formData.get("initialBalance"),
-        currentBalance: formData.get("currentBalance"),
-        accountType: formData.get("accountType"),
-        autoTrade: formData.get("autoTrade") === "true" ? true : false,
+        date_opened: formData.get("date_opened"),
+        initial_balance: formData.get("initial_balance"),
+        current_balance: formData.get("current_balance"),
+        account_type: formData.get("account_type"),
+        auto_trade: formData.get("auto_trade") === "true" ? true : false,
       };
       res = await ApiClient(
         "py",
@@ -67,6 +65,8 @@ export async function action({ request }: ActionFunctionArgs) {
         request,
         data
       );
+
+        console.log(res);
       break;
   }
 
@@ -160,9 +160,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
         size: data.size as number,
         pages: data.pages as number,
       };
-
-      console.log(accounts);
-
     }
 
     if ("cookieHeader" in res && res.cookieHeader !== null && res.success) {
