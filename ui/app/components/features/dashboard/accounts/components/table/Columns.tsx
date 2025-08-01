@@ -7,14 +7,14 @@ import DeleteAccountAction from "./DeleteAccountAction";
 
 export interface AccountCols {
   id: number;
-  accountNum: string;
+  account_num: string;
   nickname?: string;
   broker: string;
-  dateOpened: string;
-  initialBalance: number;
-  currentBalance: number;
-  accountType: string;
-  autoTrade: boolean;
+  date_opened: string;
+  initial_balance: number;
+  current_balance: number;
+  account_type: string;
+  auto_trade: boolean;
 }
 
 const Columns: ColumnDef<{ [key: string]: any }>[] = [
@@ -28,16 +28,35 @@ const Columns: ColumnDef<{ [key: string]: any }>[] = [
   {
     accessorKey: "accountNum",
     header: () => <div className="text-center">Account Number</div>,
-    cell: ({ row }) => (
-      <p className="capitalize text-center">{row.original.account_num}</p>
-    ),
+    cell: ({ row }) => {
+      const accountNum = row.original.account_num || "";
+      const masked =
+        accountNum.length > 4
+          ? "*".repeat(accountNum.length - 4) + accountNum.slice(-4)
+          : accountNum;
+
+      return (
+        <p className="text-center break-words whitespace-pre-wrap w-[100px] overflow-hidden font-mono">
+          {masked}
+        </p>
+      );
+    },
   },
+
   {
     accessorKey: "nickname",
     header: () => <div className="text-center">Nickname</div>,
-    cell: ({ row }) => (
-      <p className="capitalize text-center">{row.original.nickname}</p>
-    ),
+    cell: ({ row }) => {
+      const nickname = row.original.nickname || "";
+      const truncated =
+        nickname.length > 100 ? nickname.slice(0, 100) + "…" : nickname;
+
+      return (
+        <p className="capitalize text-center break-words whitespace-pre-wrap w-[100px] overflow-hidden">
+          {truncated}
+        </p>
+      );
+    },
   },
   {
     accessorKey: "broker",
@@ -101,14 +120,14 @@ const Columns: ColumnDef<{ [key: string]: any }>[] = [
     cell: ({ row }) => (
       <EditAccountAction
         id={row.original.id}
-        accountNum={row.original.account_num}
-        accountType={row.original.account_type}
-        autoTrade={row.original.auto_trade}
+        account_num={row.original.account_num}
+        account_type={row.original.account_type}
+        auto_trade={row.original.auto_trade}
         nickname={row.original.nickname}
         broker={row.original.broker}
-        dateOpened={row.original.date_opened}
-        initialBalance={row.original.initial_balance}
-        currentBalance={row.original.current_balance}
+        date_opened={row.original.date_opened}
+        initial_balance={row.original.initial_balance}
+        current_balance={row.original.current_balance}
       />
     ),
   },

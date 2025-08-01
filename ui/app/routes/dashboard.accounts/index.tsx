@@ -21,14 +21,14 @@ export async function action({ request }: ActionFunctionArgs) {
   switch (formData.get("action")) {
     case "add_account":
       data = {
-        account_num: formData.get("accountNum"),
+        account_num: formData.get("account_num"),
         nickname: formData.get("nickname"),
         broker: formData.get("broker"),
-        date_opened: formData.get("dateOpened"),
-        initial_balance: formData.get("initialBalance"),
-        current_balance: formData.get("currentBalance"),
-        account_type: formData.get("accountType"),
-        auto_trade: formData.get("autoTrade") === "true" ? true : false,
+        date_opened: formData.get("date_opened"),
+        initial_balance: formData.get("initial_balance"),
+        current_balance: formData.get("current_balance"),
+        account_type: formData.get("account_type"),
+        auto_trade: formData.get("auto_trade") === "true" ? true : false,
       };
 
       console.log(data);

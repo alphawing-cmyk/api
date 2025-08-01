@@ -45,27 +45,27 @@ import { AccountCols } from "./Columns";
 
 const formSchema = z.object({
   id: z.number(),
-  accountNum: z.string().min(2, { message: "Account Number is required." }),
+  account_num: z.string().min(2, { message: "Account Number is required." }),
   nickname: z.string().optional(),
   broker: z.string().nonempty(),
-  dateOpened: z.string(),
-  initialBalance: z.number().default(0.0),
-  currentBalance: z.number().default(0.0),
-  accountType: z.string().default("paper_account"),
-  autoTrade: z.string().default("yes"),
+  date_opened: z.string(),
+  initial_balance: z.number().default(0.0),
+  current_balance: z.number().default(0.0),
+  account_type: z.string().default("paper_account"),
+  auto_trade: z.string().default("yes"),
   action: z.string().default("edit_account"),
 });
 
 function EditAccountAction({
   id,
-  accountNum,
-  accountType,
-  autoTrade,
+  account_num,
+  account_type,
+  auto_trade,
   nickname,
   broker,
-  dateOpened,
-  initialBalance,
-  currentBalance,
+  date_opened,
+  initial_balance,
+  current_balance,
 }: AccountCols) {
   const submit = useSubmit();
   const matches = useMatches();
@@ -110,14 +110,14 @@ function EditAccountAction({
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      accountNum: accountNum,
+      account_num: account_num,
       nickname: nickname,
-      dateOpened: dateOpened ? format(parseISO(dateOpened), "yyyy-MM-dd") : "",
-      autoTrade: autoTrade ? "true" : "false",
+      date_opened: date_opened ? format(parseISO(date_opened), "yyyy-MM-dd") : "",
+      auto_trade: auto_trade ? "true" : "false",
       broker,
-      accountType,
-      initialBalance,
-      currentBalance,
+      account_type,
+      initial_balance,
+      current_balance,
       id,
     },
   });
@@ -135,15 +135,15 @@ function EditAccountAction({
             Edit
           </Button>
         </DialogTrigger>
-        <DialogContent>
+        <DialogContent className="max-h-[90vh] overflow-y-auto">
           <DialogDescription>
-            Able to edit your account information.
+            Edit your account information here
           </DialogDescription>
           <DialogHeader>
-            <DialogTitle>Edit your account</DialogTitle>
+            <DialogTitle>Edit Form</DialogTitle>
           </DialogHeader>
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <form onSubmit={form.handleSubmit(onSubmit)} className="flex-1 space-y-4 overflow-y-auto pr-2">
               <FormField
                 control={form.control}
                 name="id"
@@ -159,7 +159,7 @@ function EditAccountAction({
               />
               <FormField
                 control={form.control}
-                name="accountNum"
+                name="account_num"
                 render={({ field }) => (
                   <FormItem className="grid grid-cols-4 items-center gap-1 mt-2">
                     <FormLabel>Account Number</FormLabel>
@@ -233,7 +233,7 @@ function EditAccountAction({
 
               <FormField
                 control={form.control}
-                name="dateOpened"
+                name="date_opened"
                 render={({ field }) => (
                   <FormItem className="grid grid-cols-4 items-center gap-2">
                     <FormLabel>Date Opened</FormLabel>
@@ -247,7 +247,7 @@ function EditAccountAction({
 
               <FormField
                 control={form.control}
-                name="initialBalance"
+                name="initial_balance"
                 render={({ field }) => (
                   <FormItem className="grid grid-cols-4 items-center gap-2">
                     <FormLabel>Initial Balance</FormLabel>
@@ -271,7 +271,7 @@ function EditAccountAction({
 
               <FormField
                 control={form.control}
-                name="currentBalance"
+                name="current_balance"
                 render={({ field }) => (
                   <FormItem className="grid grid-cols-4 items-center gap-2">
                     <FormLabel>Current Balance</FormLabel>
@@ -295,7 +295,7 @@ function EditAccountAction({
 
               <FormField
                 control={form.control}
-                name="accountType"
+                name="account_type"
                 render={({ field }) => (
                   <FormItem className="grid grid-cols-4 items-center gap-2">
                     <FormLabel>Account Type</FormLabel>
@@ -345,7 +345,7 @@ function EditAccountAction({
 
               <FormField
                 control={form.control}
-                name="autoTrade"
+                name="auto_trade"
                 render={({ field }) => (
                   <FormItem className="grid grid-cols-4 items-center gap-2">
                     <FormLabel>Auto Trade</FormLabel>
@@ -377,7 +377,7 @@ function EditAccountAction({
                 )}
               />
 
-              {form.watch("autoTrade") === "true" && (
+              {form.watch("auto_trade") === "true" && (
                 <Alert variant="destructive" className="col-span-4">
                   <AlertCircle className="h-4 w-4" />
                   <AlertTitle>Notice</AlertTitle>
