@@ -122,7 +122,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
     const size = url.searchParams.get("size") || "10";
     const params = url.searchParams.get("params") || "";
 
-    console.log(`/account/client/all?page=${page}&size=${size}&${params}`);
     const res = await ApiClient(
       "py",
       "GET",
@@ -143,22 +142,23 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
     if (
       res &&
-      typeof res === "object" &&
+      "data" in res &&
       "success" in res &&
-      "items" in res &&
-      Array.isArray(res.items) &&
+      "items" in res.data &&
       res.success === true &&
-      "total" in res &&
-      "page" in res &&
-      "size" in res &&
-      "pages" in res
+      "total" in res.data &&
+      "page" in res.data &&
+      "size" in res.data &&
+      "pages" in res.data
     ) {
+
+    let data = res.data;
      accounts = {
-        items: res.items as [{}],
-        total: res.total as number,
-        page: res.page as number,
-        size: res.size as number,
-        pages: res.pages as number,
+        items: data.items as [{}],
+        total: data.total as number,
+        page: data.page as number,
+        size: data.size as number,
+        pages: data.pages as number,
       };
 
       console.log(accounts);
