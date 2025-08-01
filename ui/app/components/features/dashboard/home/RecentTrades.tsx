@@ -8,9 +8,9 @@ import {
   CardFooter,
 } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
-import { TradesData } from "~/lib/data";
+import { TradesData } from "~/lib/data/tradesData";
 import { useEffect, useState } from "react";
-import PaginationWrapper from "~/components/dashboard/PaginationWrapper";
+import PaginationWrapper from "../common/paginationWrapper";
 
 const RecentTrades = () => {
   const [numPages, setNumPages] = useState<number>(1);
