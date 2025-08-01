@@ -371,10 +371,12 @@ async def get_accounts_by_user(
     user: dict = Depends(ValidateJWT)
 ):
     queryParams = dict(request.query_params)
+    print(queryParams);
+    
     query       = select(Account) \
-                        .filter(Account.userId == user['id']) \
-                        .options(joinedload(Account.user)) \
-                        .order_by(Account.id)
+                    .filter(Account.user_id == user['id']) \
+                    .options(joinedload(Account.user)) \
+                    .order_by(Account.id)
 
     if "nickname" in queryParams:
         query = query.filter(Account.nickname.ilike(f"%{queryParams['nickname']}%"))

@@ -29,7 +29,7 @@ const Columns: ColumnDef<{ [key: string]: any }>[] = [
     accessorKey: "accountNum",
     header: () => <div className="text-center">Account Number</div>,
     cell: ({ row }) => (
-      <p className="capitalize text-center">{row.original.accountNum}</p>
+      <p className="capitalize text-center">{row.original.account_num}</p>
     ),
   },
   {
@@ -54,7 +54,7 @@ const Columns: ColumnDef<{ [key: string]: any }>[] = [
     cell: ({ row }) => (
       <div className="text-center">
         <p className="capitalize text-center">
-          {formatDateFNS(row.original.dateOpened)}
+          {formatDateFNS(row.original.date_opened)}
         </p>
       </div>
     ),
@@ -65,7 +65,7 @@ const Columns: ColumnDef<{ [key: string]: any }>[] = [
     cell: ({ row }) => (
       <div className="text-right">
         <p>
-          ${(Math.round(row.original.initialBalance * 100) / 100).toFixed(2)}
+          ${(Math.round(row.original.initial_balance * 100) / 100).toFixed(2)}
         </p>
       </div>
     ),
@@ -76,7 +76,7 @@ const Columns: ColumnDef<{ [key: string]: any }>[] = [
     cell: ({ row }) => (
       <div className="text-right">
         <p>
-          ${(Math.round(row.original.currentBalance * 100) / 100).toFixed(2)}
+          ${(Math.round(row.original.current_balance * 100) / 100).toFixed(2)}
         </p>
       </div>
     ),
@@ -85,14 +85,14 @@ const Columns: ColumnDef<{ [key: string]: any }>[] = [
     accessorKey: "accountType",
     header: () => <div className="text-center">Account Type</div>,
     cell: ({ row }) => (
-      <AccountTypeInfoAction account_type={row.original.accountType} />
+      <AccountTypeInfoAction account_type={row.original.account_type} />
     ),
   },
   {
     accessorKey: "autoTrade",
     header: () => <div className="text-center">Auto Trade</div>,
     cell: ({ row }) => (
-      <p className="capitalize text-center">{`${row.original.autoTrade}`}</p>
+      <p className="capitalize text-center">{`${row.original.auto_trade}`}</p>
     ),
   },
   {
@@ -101,14 +101,14 @@ const Columns: ColumnDef<{ [key: string]: any }>[] = [
     cell: ({ row }) => (
       <EditAccountAction
         id={row.original.id}
-        accountNum={row.original.accountNum}
-        accountType={row.original.accountType}
-        autoTrade={row.original.autoTrade}
+        accountNum={row.original.account_num}
+        accountType={row.original.account_type}
+        autoTrade={row.original.auto_trade}
         nickname={row.original.nickname}
         broker={row.original.broker}
-        dateOpened={row.original.dateOpened}
-        initialBalance={row.original.initialBalance}
-        currentBalance={row.original.currentBalance}
+        dateOpened={row.original.date_opened}
+        initialBalance={row.original.initial_balance}
+        currentBalance={row.original.current_balance}
       />
     ),
   },

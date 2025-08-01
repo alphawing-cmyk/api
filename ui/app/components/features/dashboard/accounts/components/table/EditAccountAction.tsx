@@ -18,7 +18,7 @@ import {
 } from "~/components/ui/dialog";
 import { useToast } from "~/hooks/use-toast";
 import { Input } from "~/components/ui/input";
-import { action, loader } from "~/routes/dashboard/accounts/route";
+import { action, loader } from "~/routes/dashboard.accounts";
 import {
   Form,
   FormControl,
@@ -27,7 +27,7 @@ import {
   FormLabel,
   FormMessage,
 } from "~/components/ui/form";
-import { format } from "date-fns";
+import { format, parseISO } from "date-fns";
 import { Alert, AlertDescription, AlertTitle } from "~/components/ui/alert";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -112,7 +112,7 @@ function EditAccountAction({
     defaultValues: {
       accountNum: accountNum,
       nickname: nickname,
-      dateOpened: format(dateOpened, "yyyy-MM-dd"),
+      dateOpened: dateOpened ? format(parseISO(dateOpened), "yyyy-MM-dd") : "",
       autoTrade: autoTrade ? "true" : "false",
       broker,
       accountType,

@@ -21,7 +21,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
-import { loader } from "~/routes/dashboard/accounts/route";
+import { loader } from "~/routes/dashboard.accounts";
 import {
   Form,
   FormControl,

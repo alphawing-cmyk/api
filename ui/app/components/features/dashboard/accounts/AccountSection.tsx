@@ -4,7 +4,7 @@ import Columns from "./components/table/Columns";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import AddAccount from "./components/AddAccount";
 import { DataTableServerSide } from "~/components/ui/data-table-server-side";
-import { TableData } from "~/routes/dashboard/accounts/route";
+import { TableData } from "~/routes/dashboard.accounts";
 import { useSearchParams } from "@remix-run/react";
 import { useState } from "react";
 
@@ -12,7 +12,7 @@ interface AccountClientProps {
   data: TableData;
 }
 
-export const AccountSection: React.FC<AccountClientProps> = ({ data }) => {
+export const AccountSection: React.FC<AccountClientProps> = ({ data }) => {  
   const [searchParams, setSearchParams] = useSearchParams();
   const [isFiltered, setIsFiltered]     = useState<boolean>(false);
 

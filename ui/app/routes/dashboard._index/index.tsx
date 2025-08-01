@@ -67,7 +67,6 @@ export default function DashboardHome() {
       setLoading(false);
       let data = loaderData.data;
 
-      console.log(data);
       setData((prev) => {
         return {
           ...prev,
