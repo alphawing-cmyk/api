@@ -335,7 +335,7 @@ async def identify_user(
         )
 
 
-@router.get(
+@router.post(
     "/refresh",
     dependencies=[
         Depends(RBAChecker(roles=['admin', 'client', 'demo'], permissions=None))]

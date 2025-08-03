@@ -12,9 +12,9 @@ interface AccountClientProps {
   data: TableData;
 }
 
-export const AccountSection: React.FC<AccountClientProps> = ({ data }) => {  
+export const AccountSection: React.FC<AccountClientProps> = ({ data }) => {
   const [searchParams, setSearchParams] = useSearchParams();
-  const [isFiltered, setIsFiltered]     = useState<boolean>(false);
+  const [isFiltered, setIsFiltered] = useState<boolean>(false);
 
   const fetchRecords = async (
     pageIndex: number,
@@ -39,7 +39,7 @@ export const AccountSection: React.FC<AccountClientProps> = ({ data }) => {
       </div>
       <Separator />
 
-      {(data.total === 0 && !isFiltered)? (
+      {data.total === 0 && !isFiltered ? (
         <Card className="w-full">
           <CardHeader>
             <CardTitle>Account Records</CardTitle>
@@ -51,14 +51,16 @@ export const AccountSection: React.FC<AccountClientProps> = ({ data }) => {
           </CardContent>
         </Card>
       ) : (
-        <DataTableServerSide
-          columns={Columns}
-          data={data.items}
-          searchKey={["nickname"]}
-          pageSize={data.size}
-          totalRecords={data.total}
-          fetchData={fetchRecords}
-        />
+        <div className="overflow-y-auto">
+          <DataTableServerSide
+            columns={Columns}
+            data={data.items}
+            searchKey={["nickname"]}
+            pageSize={data.size}
+            totalRecords={data.total}
+            fetchData={fetchRecords}
+          />
+        </div>
       )}
     </>
   );

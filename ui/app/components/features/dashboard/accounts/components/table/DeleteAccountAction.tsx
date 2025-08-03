@@ -12,7 +12,7 @@ import {
   DialogClose,
 } from "~/components/ui/dialog";
 import { useToast } from "~/hooks/use-toast";
-import { action } from "~/routes/dashboard/accounts/route";
+import { action } from "~/routes/dashboard.accounts";
 
 function DeleteAccountAction({ id }: { id: number }) {
   const submit = useSubmit();

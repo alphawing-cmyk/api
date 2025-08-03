@@ -142,8 +142,8 @@ async def get_tickers(
     session: AsyncSession = Depends(get_session),
 ):
     queryParams = dict(request.query_params)
-    query = select(Tickers) \
-        .order_by(Tickers.name)
+    query       = select(Tickers) \
+                    .order_by(Tickers.name)
 
     if "name" in queryParams:
         query = query.filter(func.cast(Tickers.name, String).ilike(

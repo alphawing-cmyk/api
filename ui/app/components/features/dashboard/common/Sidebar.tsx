@@ -52,7 +52,7 @@ const Sidebar = () => {
                 {item.userLevel && (
                   <Badge
                     variant={getBadgeVariant(item.userLevel)}
-                    className="text-xs capitalize p-1"
+                    className="text-[11px] capitalize p-1"
                   >
                     {item.userLevel}
                   </Badge>

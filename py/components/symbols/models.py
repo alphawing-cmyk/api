@@ -32,7 +32,7 @@ class Historical(Base):
     id: Mapped[int]             = mapped_column(primary_key=True, index=True)
     custom_id: Mapped[str]      = mapped_column(String(length=255), unique=True, index=True)
     ticker_id: Mapped[int]      = mapped_column(ForeignKey("tickers.id", ondelete="CASCADE"), nullable=False)
-    symbol: Mapped[str]         = mapped_column(String(length=255), ForeignKey("Tickers.symbol"), nullable=False)
+    symbol: Mapped[str]         = mapped_column(String(length=255), nullable=False)
     milliseconds: Mapped[int]   = mapped_column(BigInteger, nullable=True, default=0)
     duration: Mapped[str]       = mapped_column(String(length=20), nullable=True)
     open: Mapped[float]         = mapped_column(Numeric(precision=30, scale=15))
