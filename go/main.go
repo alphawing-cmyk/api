@@ -133,7 +133,7 @@ func InitializeTasks(queries *db.Queries) {
 			symbols,
 			1,
 			"minute",
-			time.Now().AddDate(0, 0, -1),
+			time.Now().AddDate(0, 0, -10),
 			time.Now(),
 			os.Getenv("POLYGON_KEY"),
 		)
