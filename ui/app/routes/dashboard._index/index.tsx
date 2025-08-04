@@ -2,9 +2,12 @@ import MetricCard from "~/components/features/dashboard/common/MetricCard";
 import { Landmark, DollarSign, Coins, Gavel } from "lucide-react";
 import { LoaderFunctionArgs } from "@remix-run/node";
 import ApiClient from "~/lib/apiClient";
-import { useLoaderData } from "@remix-run/react";
+import { useLoaderData, useMatches } from "@remix-run/react";
 import { useEffect, useState } from "react";
 import { redirect } from "@remix-run/node";
+import { LiveEquityChart } from "~/components/features/dashboard/home/liveEquityChart";
+import RecentTrades from "~/components/features/dashboard/home/RecentTrades";
+import Watchlist from "~/components/features/dashboard/home/watchList";
 
 export type DatasetTypes = {
   total_service_account: number | undefined | null;
@@ -59,11 +62,11 @@ export default function DashboardHome() {
     account_growth: null,
   });
 
+  const matches = useMatches();
+  const rootData = matches.find((match) => match.id === "root");
+
   useEffect(() => {
-    if (
-      "data" in loaderData &&
-      loaderData.data
-    ) {
+    if ("data" in loaderData && loaderData.data) {
       setLoading(false);
       let data = loaderData.data;
 
@@ -137,6 +140,13 @@ export default function DashboardHome() {
           animation={true}
           decimalPlaces={0}
         />
+      </div>
+      <div>
+        <LiveEquityChart />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-5">
+          <RecentTrades />
+          <Watchlist />
+        </div>
       </div>
     </>
   );
