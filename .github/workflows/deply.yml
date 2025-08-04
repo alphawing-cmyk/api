@@ -1,0 +1,53 @@
+name: Deployment to Digital Ocean
+
+on:
+  push:
+    branches: 
+      - master
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up SSH key
+        run: |
+          mkdir -p ~/.ssh
+          touch ~/.ssh/id_rsa
+          echo "${{ secrets.VPS_SSH_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Deploy to VPS
+        run: |
+          ssh -tt -o StrictHostKeyChecking=no ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} "
+            ls -al
+            echo '${{ github.repository }}'
+            echo '${{ secrets.PROJECT_DIR }}'
+
+            if [ ! -d '${{ secrets.PROJECT_DIR }}' ]; then
+              echo 'Project folder does not exist, so completing new project setup'
+              git clone git@github:alphawing-cmyk/Alpha-Wing.git
+            else
+              echo 'Project exists, pulling new commits off master'
+              cd '${{ secrets.PROJECT_DIR }}'
+              git pull origin master
+            fi
+
+            if [ -f ~/.bash_profile ]; then
+              source ~/.bash_profile
+            fi
+            if [ -f ~/.profile ]; then
+              source ~/.profile
+            fi
+            if [ -f ~/.bashrc ]; then
+              source ~/.bashrc
+            fi
+
+            cd docker/prod
+            docker compose down
+            docker compose pull
+            docker compose up -d --build
+          "

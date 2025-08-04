@@ -3,7 +3,14 @@ from fastapi.responses import JSONResponse
 from fastapi.encoders import jsonable_encoder
 from components.database import get_session
 from sqlalchemy.ext.asyncio import AsyncSession
-from .utils import RBAChecker, ValidateJWT, generate_jwt_keys, forgotToken, ValidateJWTByToken
+from .utils import (
+    RBAChecker, 
+    ValidateJWT, 
+    generate_jwt_keys, 
+    forgotToken, 
+    ValidateJWTByToken, 
+    GetRefreshTokenFromRequest
+)
 from fastapi_pagination import Page
 from fastapi_pagination.ext.sqlalchemy import paginate
 from sqlalchemy import select, update, or_, func
@@ -313,7 +320,7 @@ async def identify_user(
     session: AsyncSession = Depends(get_session)
 ):
     try:
-        params = ValidateJWT(request=request)
+        params  = ValidateJWT(request=request)
         user_id = params.get("id")
 
         if user_id:
@@ -336,18 +343,17 @@ async def identify_user(
 
 
 @router.post(
-    "/refresh",
-    dependencies=[
-        Depends(RBAChecker(roles=['admin', 'client', 'demo'], permissions=None))]
+    "/refresh"
 )
 async def refresh_token(
     request: Request,
     session: AsyncSession = Depends(get_session)
 ):
     try:
-        token = request.cookies.get("refreshToken")
+        token  = GetRefreshTokenFromRequest(request)
+        token  = token["refreshToken"]
         params = ValidateJWTByToken(token)
-        user = None
+        user   = None
 
         if "id" in params:
             query = select(User).where(User.id == params["id"])

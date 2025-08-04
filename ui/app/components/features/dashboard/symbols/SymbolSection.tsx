@@ -1,18 +1,20 @@
 import { Heading } from "~/components/ui/heading";
 import { Separator } from "~/components/ui/separator";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
-import { TableData } from "~/routes/dashboard/accounts/route";
+import { TableData } from "~/routes/dashboard.symbols";
 import { useSearchParams } from "@remix-run/react";
 import { useState } from "react";
 import AddASymbol from "./components/AddSymbol";
 import Columns from "./components/table/Columns";
 import { DataTableServerSide } from "~/components/ui/data-table-server-side";
+import type { User } from "~/root";
 
-interface AccountClientProps {
+interface SymbolDataProps {
   data: TableData;
+  user: User
 }
 
-export const SymbolSection: React.FC<AccountClientProps> = ({ data }) => {
+export const SymbolSection: React.FC<SymbolDataProps> = ({ data, user }) => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [isFiltered, setIsFiltered]     = useState<boolean>(false);
 
@@ -35,7 +37,7 @@ export const SymbolSection: React.FC<AccountClientProps> = ({ data }) => {
           title={`Symbols (${data?.total})`}
           description="Manage your link trading accounts here"
         />
-        <AddASymbol />
+        <AddASymbol userRole={user?.role} />
       </div>
       <Separator />
 
@@ -54,7 +56,7 @@ export const SymbolSection: React.FC<AccountClientProps> = ({ data }) => {
         <DataTableServerSide
           columns={Columns}
           data={data.items}
-          searchKey={["nickname"]}
+          searchKey={["name"]}
           pageSize={data.size}
           totalRecords={data.total}
           fetchData={fetchRecords}

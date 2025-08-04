@@ -6,38 +6,7 @@ import { useLocation } from "@remix-run/react";
 // import { useWebsocket } from "~/context/WebsocketContext";
 import { Toaster } from "~/components/ui/toaster";
 import { Toaster as ToasterSonner } from "~/components/ui/sonner";
-import { LoaderFunctionArgs } from "@remix-run/node";
-import { getApiUrl } from "~/lib/utils";
-
-
-export async function loader({ request }: LoaderFunctionArgs) {
-
-  const cookieHeader = request.headers.get("cookie");
-  let env = process.env.NODE_ENV;
-
-  let res = await fetch(getApiUrl("py") as string + "/identify", {
-    method: 'GET',
-    credentials: 'include',
-    headers: {
-      'Content-Type': 'application/json',
-      ...(cookieHeader && { cookie: cookieHeader }),
-    }
-  });
-
-  let user;
-  if (res.status === 200) {
-    user = await res.json();
-  }
-
-  return Response.json({
-    ENV: {
-      NODE_ENV: process.env.NODE_ENV,
-    },
-    username: user?.data?.username,
-    role: user?.data?.role,
-    id: user?.data?.id
-  });
-}
+import { loader } from "../dashboard._index";
 
 
 

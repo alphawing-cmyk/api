@@ -39,7 +39,19 @@ def DecodeBase64Token(token: str) -> dict:
             'error': str(e)
         }
 
-
+def GetRefreshTokenFromRequest(request: Request) -> dict | None:
+     if request.headers.get('bearer') != None:
+        token  = request.headers.get('bearer')
+        return {"refreshToken": token}
+     elif request.cookies.get('remix') != None:
+        cookie    = request.cookies.get('remix')
+        decodeObj = DecodeBase64Token(cookie)
+        claims    = decodeObj.get("claims").get("user")
+        return {"refreshToken": claims.get("refreshToken")}
+     else:
+         return None
+         
+          
 def ValidateJWTByToken(token: str)-> dict | None:
     try:
         params = jwt.decode(token, settings.jwt_secret, algorithms=['HS256'])

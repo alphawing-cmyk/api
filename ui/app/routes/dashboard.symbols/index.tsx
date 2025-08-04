@@ -10,10 +10,11 @@ import ApiClient from "~/lib/apiClient";
 import { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import { redirect } from "@remix-run/node";
 import { SymbolSection } from "~/components/features/dashboard/symbols/SymbolSection";
-import { useLoaderData } from "@remix-run/react";
+import { useLoaderData, useMatches } from "@remix-run/react";
 import { AddSymbol } from "./_actions/addSymbol";
 import { DeleteSymbol } from "./_actions/deleteSymbol";
 import { EditSymbol } from "./_actions/editSymbol";
+import { RootLoaderData } from "~/root";
 
 export async function action({ request }: ActionFunctionArgs) {
   const formData = await request.formData();
@@ -52,6 +53,7 @@ export async function action({ request }: ActionFunctionArgs) {
         message: res.success
           ? "Successfully added in ticker."
           : res.data?.message || "Action failed",
+        res,
       },
       {
         status: res.success ? 200 : 400,
@@ -65,6 +67,7 @@ export async function action({ request }: ActionFunctionArgs) {
       success: false,
       action: actionType,
       message: "Could not process symbol action, please try again.",
+      res: res,
     },
     { status: 500 }
   );
@@ -93,8 +96,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
       request,
       null
     );
-
-    console.log(tickerRecordsResponse);
 
     // Extract cookie header if present
     const cookieHeader =
@@ -136,6 +137,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 const Symbols = () => {
   const { tickers } = useLoaderData<typeof loader>();
+  const matches = useMatches();
+  const layoutMatch = matches.find((m) => m.id === "root");
+  const layoutData = layoutMatch?.data as RootLoaderData;
 
   return (
     <>
@@ -158,7 +162,7 @@ const Symbols = () => {
         </div>
 
         <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
-          <SymbolSection data={tickers} />
+          <SymbolSection data={tickers} user={layoutData?.user} />
         </div>
       </div>
     </>

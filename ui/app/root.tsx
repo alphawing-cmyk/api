@@ -20,6 +20,7 @@ import {
 import clsx from "clsx";
 import { useLocation } from "@remix-run/react";
 import { useEffect, useState } from "react";
+import { getApiUrl } from "./lib/utils";
 
 export const links: LinksFunction = () => [
   { rel: "preconnect", href: "https://fonts.googleapis.com" },
@@ -34,14 +35,58 @@ export const links: LinksFunction = () => [
   },
 ];
 
+export interface UserPermission {
+  userId: number | null;
+  permissionId: number | null;
+  grantedAt: string | null;
+}
+
+export interface User {
+  id: number;
+  username: string;
+  first_name: string;
+  last_name: string;
+  email: string;
+  company: string;
+  is_active: boolean | null;
+  role: string;
+  img_path: string | null;
+  refresh_token: string;
+  forgot_token: string | null;
+  user_permissions: UserPermission[];
+}
+
+export interface RootLoaderData  {
+ theme: string;
+ ENV: {env: string},
+ user: User
+}
+
 export async function loader({ request }: LoaderFunctionArgs) {
   const { getTheme } = await themeSessionResolver(request);
+
+  const cookieHeader = request.headers.get("cookie");
+
+    let res = await fetch(getApiUrl("py") as string + "/identify", {
+      method: 'GET',
+      credentials: 'include',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(cookieHeader && { cookie: cookieHeader }),
+      }
+    });
+  
+    let user;
+    if (res.status === 200) {
+      user = await res.json();
+    }
 
   return Response.json({
     theme: getTheme(),
     ENV: {
       NODE_ENV: process.env.NODE_ENV,
     },
+    user,
   });
 }
 

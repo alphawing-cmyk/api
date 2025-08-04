@@ -42,7 +42,7 @@ import {
   Controller,
 } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { action } from "~/routes/dashboard/symbols/route";
+import { action } from "~/routes/dashboard.symbols";
 import { useToast } from "~/hooks/use-toast";
 
 const formSchema = z.object({
@@ -62,26 +62,13 @@ const formSchema = z.object({
     .optional(),
 });
 
-const AddASymbol = () => {
-  const matches = useMatches();
+const AddASymbol = ({userRole}:{userRole: string | undefined}) => {
   const { toast } = useToast();
-  const actionData = useActionData<typeof action>();
-  const layoutData = matches.find(
-    (match) => match.id === "routes/dashboard/_layout"
-  );
-  const [role, setRole] = useState<string | undefined>(undefined);
+  const [role, setRole] = useState<string | undefined>(userRole);
   const submit = useSubmit();
+  const actionData = useActionData<typeof action>();
 
-  useEffect(() => {
-    if (
-      layoutData?.data &&
-      typeof layoutData.data === "object" &&
-      "role" in layoutData.data
-    ) {
-      setRole(layoutData.data.role as string);
-    }
-  }, [layoutData]);
-
+ 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -100,6 +87,7 @@ const AddASymbol = () => {
   });
 
   useEffect(() => {
+    console.log(actionData);
     if (actionData && "success" in actionData && actionData.success) {
       toast({
         title: "Success",
@@ -112,6 +100,7 @@ const AddASymbol = () => {
         industry: "",
         market: "",
         market_cap: "",
+        alt_names: [],
       });
     } else if (actionData && "success" in actionData && !actionData.success) {
       toast({

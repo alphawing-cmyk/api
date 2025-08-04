@@ -6,45 +6,16 @@ import { useLocation } from "@remix-run/react";
 // import { useWebsocket } from "~/context/WebsocketContext";
 import { Toaster } from "~/components/ui/toaster";
 import { Toaster as ToasterSonner } from "~/components/ui/sonner";
-import { LoaderFunctionArgs } from "@remix-run/node";
-import { getApiUrl } from "~/lib/utils";
-
-
-export async function loader({ request }: LoaderFunctionArgs) {
-
-  const cookieHeader = request.headers.get("cookie");
-  let env = process.env.NODE_ENV;
-
-  let res = await fetch(getApiUrl("py") as string + "/identify", {
-    method: 'GET',
-    credentials: 'include',
-    headers: {
-      'Content-Type': 'application/json',
-      ...(cookieHeader && { cookie: cookieHeader }),
-    }
-  });
-
-  let user;
-  if (res.status === 200) {
-    user = await res.json();
-  }
-
-  return Response.json({
-    ENV: {
-      NODE_ENV: process.env.NODE_ENV,
-    },
-    username: user?.data?.username,
-    role: user?.data?.role,
-    id: user?.data?.id
-  });
-}
+import { useMatches } from "@remix-run/react";
+import { RootLoaderData } from "~/root";
 
 
 
 export default function DashboardLayout() {
   const location = useLocation();
-  const data = useLoaderData<typeof loader>();
-
+  const matches     = useMatches();
+  const layoutMatch = matches.find((m) => m.id === "root");
+  const layoutData = layoutMatch?.data as RootLoaderData ;
 
   // ---------------Websocket--------------------
   //   const socket = useWebsocket();
@@ -74,7 +45,7 @@ export default function DashboardLayout() {
               {location.pathname === "/dashboard" ? (
                 <div className="flex items-center justify-between space-y-2">
                   <h2 className="scroll-m-20 border-b pb-2 text-2xl font-semibold tracking-tight first:mt-0">
-                    Welcome {data?.username},&nbsp;&nbsp;here are your highlights
+                    Welcome {layoutData?.user?.username && ""},&nbsp;&nbsp;here are your highlights
                   </h2>
                 </div>
               ) : (
