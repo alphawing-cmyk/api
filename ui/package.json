@@ -44,6 +44,7 @@
     "react-dom": "^18.2.0",
     "react-hook-form": "^7.54.2",
     "react-konva": "^18.2.12",
+    "react-select": "^5.10.2",
     "react-spinners": "^0.17.0",
     "react-spring": "^10.0.1",
     "react-toastify": "^11.0.5",

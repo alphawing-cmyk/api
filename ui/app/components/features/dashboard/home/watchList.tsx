@@ -1,4 +1,5 @@
 import { useState } from "react";
+import Select from "react-select";
 import {
   Card,
   CardContent,
@@ -7,26 +8,47 @@ import {
   CardDescription,
   CardFooter,
 } from "~/components/ui/card";
-import { Input } from "~/components/ui/input";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { ScrollArea } from "~/components/ui/scroll-area";
 import { Avatar, AvatarFallback } from "~/components/ui/avatar";
 
+const allTickers = [
+  { symbol: "AAPL", name: "Apple Inc.", market: "NASDAQ" },
+  { symbol: "GOOGL", name: "Alphabet Inc.", market: "NASDAQ" },
+  { symbol: "BTC", name: "Bitcoin", market: "Crypto" },
+  { symbol: "ETH", name: "Ethereum", market: "Crypto" },
+  { symbol: "TSLA", name: "Tesla Inc.", market: "NASDAQ" },
+  { symbol: "AMZN", name: "Amazon.com Inc.", market: "NASDAQ" },
+  { symbol: "MSFT", name: "Microsoft Corp.", market: "NASDAQ" },
+];
+
+const tickerOptions = allTickers.map((ticker) => ({
+  value: ticker.symbol,
+  label: `${ticker.symbol} — ${ticker.name} (${ticker.market})`,
+}));
+
 const Watchlist = () => {
   const [watchlist, setWatchlist] = useState<string[]>([]);
   const [searchHistory, setSearchHistory] = useState<string[]>([]);
-  const [tickerInput, setTickerInput] = useState<string>("");
+  const [selectedOption, setSelectedOption] = useState<{
+    value: string;
+    label: string;
+  } | null>(null);
 
   const handleAddTicker = () => {
-    const trimmed = tickerInput.trim().toUpperCase();
-    if (trimmed && !watchlist.includes(trimmed)) {
-      setWatchlist([trimmed, ...watchlist]);
+    if (!selectedOption) return;
+    const symbol = selectedOption.value;
+
+    if (!watchlist.includes(symbol)) {
+      setWatchlist([symbol, ...watchlist]);
     }
-    if (trimmed && !searchHistory.includes(trimmed)) {
-      setSearchHistory([trimmed, ...searchHistory]);
+
+    if (!searchHistory.includes(symbol)) {
+      setSearchHistory([symbol, ...searchHistory]);
     }
-    setTickerInput("");
+
+    setSelectedOption(null); // Clear selection
   };
 
   const handleRemoveTicker = (symbol: string) => {
@@ -37,16 +59,22 @@ const Watchlist = () => {
     <Card className="w-full">
       <CardHeader>
         <CardTitle>My Watchlist</CardTitle>
-        <CardDescription>Track your favorite stocks and crypto tickers.</CardDescription>
+        <CardDescription>
+          Track your favorite stocks and crypto tickers.
+        </CardDescription>
       </CardHeader>
 
       <CardContent className="space-y-4">
-        <div className="flex gap-2">
-          <Input
-            placeholder="Add ticker symbol (e.g., AAPL, BTC)"
-            value={tickerInput}
-            onChange={(e) => setTickerInput(e.target.value)}
-          />
+        <div className="flex gap-2 items-center">
+          <div className="w-full">
+            <Select
+              options={tickerOptions}
+              value={selectedOption}
+              onChange={(option) => setSelectedOption(option)}
+              placeholder="Search and select a ticker"
+              isClearable
+            />
+          </div>
           <Button onClick={handleAddTicker}>Add</Button>
         </div>
 
