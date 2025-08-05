@@ -35,7 +35,7 @@ export const SymbolSection: React.FC<SymbolDataProps> = ({ data, user }) => {
       <div className="flex items-start justify-between">
         <Heading
           title={`Symbols (${data?.total})`}
-          description="Manage your link trading accounts here"
+          description="Manage ticker symbols"
         />
         <AddASymbol userRole={user?.role} />
       </div>

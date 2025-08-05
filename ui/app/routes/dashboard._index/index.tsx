@@ -8,6 +8,7 @@ import { redirect } from "@remix-run/node";
 import { LiveEquityChart } from "~/components/features/dashboard/home/liveEquityChart";
 import RecentTrades from "~/components/features/dashboard/home/RecentTrades";
 import Watchlist from "~/components/features/dashboard/home/watchList";
+import HistoricalChart from "~/components/features/dashboard/home/historicalChart";
 
 export type DatasetTypes = {
   total_service_account: number | undefined | null;
@@ -146,6 +147,9 @@ export default function DashboardHome() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-5">
           <RecentTrades />
           <Watchlist />
+        </div>
+        <div className="my-5">
+          <HistoricalChart />
         </div>
       </div>
     </>

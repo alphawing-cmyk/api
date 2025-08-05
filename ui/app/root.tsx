@@ -2,6 +2,7 @@ import {
   Links,
   Meta,
   Outlet,
+  redirect,
   Scripts,
   ScrollRestoration,
 } from "@remix-run/react";
@@ -21,6 +22,7 @@ import clsx from "clsx";
 import { useLocation } from "@remix-run/react";
 import { useEffect, useState } from "react";
 import { getApiUrl } from "./lib/utils";
+import ApiClient from "./lib/apiClient";
 
 export const links: LinksFunction = () => [
   { rel: "preconnect", href: "https://fonts.googleapis.com" },
@@ -56,30 +58,35 @@ export interface User {
   user_permissions: UserPermission[];
 }
 
-export interface RootLoaderData  {
- theme: string;
- ENV: {env: string},
- user: User
+export interface RootLoaderData {
+  theme: string;
+  ENV: { env: string };
+  user: User;
 }
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { getTheme } = await themeSessionResolver(request);
-
+  const url = new URL(request.url);
+  const pathname = url.pathname;
   const cookieHeader = request.headers.get("cookie");
 
-    let res = await fetch(getApiUrl("py") as string + "/identify", {
-      method: 'GET',
-      credentials: 'include',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(cookieHeader && { cookie: cookieHeader }),
-      }
-    });
-  
-    let user;
-    if (res.status === 200) {
-      user = await res.json();
+  let res = await fetch((getApiUrl("py") as string) + "/identify", {
+    method: "GET",
+    credentials: "include",
+    headers: {
+      "Content-Type": "application/json",
+      ...(cookieHeader && { cookie: cookieHeader }),
+    },
+  });
+
+  let user;
+  if (res.status === 200) {
+    user = await res.json();
+  } else {
+    if (pathname.startsWith("/dashboard")) {
+      return redirect("/login", 302);
     }
+  }
 
   return Response.json({
     theme: getTheme(),
