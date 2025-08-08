@@ -82,6 +82,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
   let user;
   if (res.status === 200) {
     user = await res.json();
+  } else if(res.status === 401) {
+
   } else {
     if (pathname.startsWith("/dashboard")) {
       return redirect("/login", 302);
