@@ -1,4 +1,4 @@
-from pydantic import BaseModel, EmailStr, model_validator, EmailStr, Field
+from pydantic import BaseModel, EmailStr, model_validator, EmailStr, Field, field_validator
 from enum import Enum
 from typing import Optional, List, Self, Dict, Any
 from datetime import datetime, date
@@ -103,8 +103,15 @@ class WatchlistInSchema(BaseModel):
     watchlist: Dict[str, Any]
 
 class WatchlistOutSchema(BaseModel):
-    id: int
     watchlist: Optional[List[Dict[str, Any]]]
+
+    @field_validator("watchlist")
+    @classmethod
+    def sort_method(cls, v):
+         if isinstance(v, list):
+              return sorted(v, key=lambda item: item.get("symbol", ""))
+         return v
+
 
     class Config:
         from_attributes = True

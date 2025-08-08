@@ -10,7 +10,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 from components.database import get_session
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from config import settings
 from urllib.parse import unquote
 
@@ -60,6 +60,7 @@ def ValidateJWTByToken(token: str)-> dict | None:
         return None
         
 def ValidateJWT(request: Request):
+    print(request.cookies)
     if request.headers.get('bearer') != None:
         token  = request.headers.get('bearer')
         try:
@@ -78,12 +79,15 @@ def ValidateJWT(request: Request):
         try:
          decodeObj = DecodeBase64Token(cookie)
          claims    = decodeObj.get("claims").get("user")
+         print(claims)
          params    = jwt.decode(claims.get("accessToken"), settings.jwt_secret, algorithms=['HS256'])
          print(params)
          return params
         except jwt.DecodeError:
+           print(jwt.DecodeError)
            raise HTTPException(status_code=401, detail="Not Authorized")
         except jwt.InvalidTokenError:
+           print(str(jwt.InvalidTokenError))
            raise HTTPException(status_code=401, detail="Not Authorized")
         except Exception as e:
             print(e)
@@ -131,11 +135,13 @@ def generate_jwt_keys(user: User) -> dict:
         refresh_exp = int(settings.refresh_token_expire_minutes 
                          if settings.refresh_token_expire_minutes else 10080) * 60
 
+        print(access_exp)
+        print(refresh_exp)
         access_token = jwt.encode(
             {
                 "id": user.id,
                 "role": user.role.value,
-                "exp": datetime.utcnow() + timedelta(seconds=access_exp)
+                "exp": datetime.now(timezone.utc) + timedelta(seconds=access_exp)
             },
             secret,
             algorithm="HS256"
@@ -144,7 +150,7 @@ def generate_jwt_keys(user: User) -> dict:
             {
                 "id": user.id,
                 "role": user.role.value,
-                "exp": datetime.utcnow() + timedelta(seconds=refresh_exp)
+                "exp": datetime.now(timezone.utc) + timedelta(seconds=refresh_exp)
             },
             secret,
             algorithm="HS256"

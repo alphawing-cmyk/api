@@ -17,7 +17,7 @@ import { loader } from "~/routes/_index";
 
 const Watchlist = () => {
   const { watchListData, tickersData } = useLoaderData<typeof loader>();
-  console.log(tickersData);
+  console.log(watchListData);
 
   const tickerOptions = tickersData?.map(
     (ticker: { [key: string]: string }) => ({
@@ -76,26 +76,26 @@ const Watchlist = () => {
           <Button onClick={handleAddTicker}>Add</Button>
         </div>
 
-        {watchlist.length > 0 && (
+        {watchListData?.watchlist?.length > 0 && (
           <div className="space-y-2">
             <h4 className="text-sm font-semibold">Watchlist</h4>
             <ScrollArea className="max-h-48 pr-2">
               <div className="space-y-2">
-                {watchlist.map((symbol) => (
+                {watchListData?.watchlist?.map((item : {market: string, symbol: string}) => (
                   <div
-                    key={symbol}
+                    key={item.symbol}
                     className="flex items-center justify-between border rounded p-2 hover:bg-muted transition-all"
                   >
                     <div className="flex items-center gap-3">
                       <Avatar className="h-8 w-8">
-                        <AvatarFallback>{symbol.slice(0, 2)}</AvatarFallback>
+                        <AvatarFallback>{item.symbol.slice(0, 2)}</AvatarFallback>
                       </Avatar>
-                      <span className="font-medium">{symbol}</span>
+                      <span className="font-medium">{item.symbol}</span>
                     </div>
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => handleRemoveTicker(symbol)}
+                      onClick={() => handleRemoveTicker(item.symbol)}
                     >
                       Remove
                     </Button>
@@ -122,8 +122,7 @@ const Watchlist = () => {
 
       <CardFooter>
         <p className="text-xs text-muted-foreground">
-          You can track both stocks and crypto assets. Tickers are stored in
-          memory.
+          You can track all your selected symbols here.
         </p>
       </CardFooter>
     </Card>
