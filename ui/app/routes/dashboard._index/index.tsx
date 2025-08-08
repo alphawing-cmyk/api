@@ -2,6 +2,7 @@ import MetricCard from "~/components/features/dashboard/common/MetricCard";
 import { Landmark, DollarSign, Coins, Gavel } from "lucide-react";
 import { LoaderFunctionArgs } from "@remix-run/node";
 import ApiClient from "~/lib/apiClient";
+import type { ApiResp } from "~/lib/apiClient";
 import { useLoaderData, useMatches } from "@remix-run/react";
 import { useEffect, useState } from "react";
 import { redirect } from "@remix-run/node";
@@ -22,32 +23,34 @@ export type DatasetTypes = {
 
 export async function loader({ request }: LoaderFunctionArgs) {
   try {
-    let res = await ApiClient("py", "GET", "/account/stats", request, null);
-    let cookieHeader;
-    let data: { [key: string]: any } = {};
+    const [statsRes, watchRes, tickersRes] = await Promise.all([
+      ApiClient("py", "GET", "/account/stats", request, null) as Promise<
+        ApiResp<Record<string, unknown>>
+      >,
+      ApiClient("py", "GET", "/watchlist", request, null) as Promise<
+        ApiResp<Record<string, unknown>>
+      >,
+      ApiClient("py", "GET", "/symbol/list", request, null) as Promise<
+        ApiResp<Record<string, unknown>>
+      >,
+    ]);
 
-    if ("success" in res && res.success === true && "data" in res) {
-      data = res.data;
-    }
+    const data = statsRes?.success && statsRes.data ? statsRes.data : {};
+    const watchListData =
+      watchRes?.success && watchRes.data ? watchRes.data : {};
+    const tickersData = tickersRes?.success ? tickersRes.data : {};
 
-    if ("cookieHeader" in res && res.cookieHeader !== null && res.success) {
-      cookieHeader = res.cookieHeader;
-    }
+    // Merge any Set-Cookie values from both calls
+    const headers = new Headers();
+    if (statsRes?.cookieHeader)
+      headers.append("Set-Cookie", statsRes.cookieHeader);
+    if (watchRes?.cookieHeader)
+      headers.append("Set-Cookie", watchRes.cookieHeader);
+    if (tickersRes?.cookieHeader)
+      headers.append("Set-Cookie", tickersRes.cookieHeader);
 
-    return Response.json(
-      {
-        data,
-      },
-      {
-        status: 200,
-        headers: cookieHeader
-          ? {
-              "Set-Cookie": cookieHeader,
-            }
-          : undefined,
-      }
-    );
-  } catch {
+    return Response.json({ data, watchListData, tickersData }, { headers });
+  } catch (err) {
     return redirect("/login");
   }
 }
@@ -152,7 +155,7 @@ export default function DashboardHome() {
         <div className="my-5">
           <HistoricalChart />
         </div>
-         <div className="my-5">
+        <div className="my-5">
           <CandleChart />
         </div>
       </div>

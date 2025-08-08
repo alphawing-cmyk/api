@@ -90,6 +90,7 @@ const HistoricalChart = () => {
               value={selectedTicker}
               onChange={(val) => val && setSelectedTicker(val)}
               className="text-sm"
+              instanceId="price-history-stock-select"
             />
           </div>
           <div className="flex flex-col w-full sm:w-60">
@@ -101,6 +102,7 @@ const HistoricalChart = () => {
               value={selectedTimeframe}
               onChange={(val) => val && setSelectedTimeframe(val)}
               className="text-sm"
+              instanceId="timeframe-select"
             />
           </div>
         </div>

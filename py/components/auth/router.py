@@ -453,7 +453,6 @@ async def get_watchlist(
     stmt      = select(User.id, User.watchlist).where(User.id == user.get("id"))
     result    = await session.execute(stmt)
     watchlist = result.first()
-    print(watchlist)
     return watchlist
 
 @router.post(

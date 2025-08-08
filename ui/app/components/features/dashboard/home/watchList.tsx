@@ -12,23 +12,20 @@ import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { ScrollArea } from "~/components/ui/scroll-area";
 import { Avatar, AvatarFallback } from "~/components/ui/avatar";
-
-const allTickers = [
-  { symbol: "AAPL", name: "Apple Inc.", market: "NASDAQ" },
-  { symbol: "GOOGL", name: "Alphabet Inc.", market: "NASDAQ" },
-  { symbol: "BTC", name: "Bitcoin", market: "Crypto" },
-  { symbol: "ETH", name: "Ethereum", market: "Crypto" },
-  { symbol: "TSLA", name: "Tesla Inc.", market: "NASDAQ" },
-  { symbol: "AMZN", name: "Amazon.com Inc.", market: "NASDAQ" },
-  { symbol: "MSFT", name: "Microsoft Corp.", market: "NASDAQ" },
-];
-
-const tickerOptions = allTickers.map((ticker) => ({
-  value: ticker.symbol,
-  label: `${ticker.symbol} — ${ticker.name} (${ticker.market})`,
-}));
+import { useLoaderData } from "@remix-run/react";
+import { loader } from "~/routes/_index";
 
 const Watchlist = () => {
+  const { watchListData, tickersData } = useLoaderData<typeof loader>();
+  console.log(tickersData);
+
+  const tickerOptions = tickersData?.map(
+    (ticker: { [key: string]: string }) => ({
+      value: ticker.symbol,
+      label: `${ticker.symbol} — ${ticker.name} (${ticker.market})`,
+    })
+  );
+
   const [watchlist, setWatchlist] = useState<string[]>([]);
   const [searchHistory, setSearchHistory] = useState<string[]>([]);
   const [selectedOption, setSelectedOption] = useState<{
@@ -73,6 +70,7 @@ const Watchlist = () => {
               onChange={(option) => setSelectedOption(option)}
               placeholder="Search and select a ticker"
               isClearable
+              instanceId="watchlist-item-select"
             />
           </div>
           <Button onClick={handleAddTicker}>Add</Button>
@@ -124,7 +122,8 @@ const Watchlist = () => {
 
       <CardFooter>
         <p className="text-xs text-muted-foreground">
-          You can track both stocks and crypto assets. Tickers are stored in memory.
+          You can track both stocks and crypto assets. Tickers are stored in
+          memory.
         </p>
       </CardFooter>
     </Card>

@@ -8,6 +8,20 @@ export type ApiReturnType = {
   cookieHeader: string | null;
   data: Response;
 };
+export type ApiOk<T = unknown> = {
+  success: true;
+  data: T;
+  cookieHeader?: string | null;
+};
+
+export type ApiErr = {
+  success: false;
+  error?: string;
+  cookieHeader?: string | null;
+};
+
+export type ApiResp<T = unknown> = ApiOk<T> | ApiErr;
+
 
 const ApiClient = async (
   service: ApiType,
