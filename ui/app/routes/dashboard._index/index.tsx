@@ -6,9 +6,10 @@ import { useLoaderData, useMatches } from "@remix-run/react";
 import { useEffect, useState } from "react";
 import { redirect } from "@remix-run/node";
 import { LiveEquityChart } from "~/components/features/dashboard/home/liveEquityChart";
-import RecentTrades from "~/components/features/dashboard/home/RecentTrades";
+import RecentTrades from "~/components/features/dashboard/home/recentTrades";
 import Watchlist from "~/components/features/dashboard/home/watchList";
 import HistoricalChart from "~/components/features/dashboard/home/historicalChart";
+import { CandleChart } from "~/components/features/dashboard/home/candleChart";
 
 export type DatasetTypes = {
   total_service_account: number | undefined | null;
@@ -150,6 +151,9 @@ export default function DashboardHome() {
         </div>
         <div className="my-5">
           <HistoricalChart />
+        </div>
+         <div className="my-5">
+          <CandleChart />
         </div>
       </div>
     </>

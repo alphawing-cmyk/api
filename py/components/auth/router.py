@@ -13,7 +13,7 @@ from .utils import (
 )
 from fastapi_pagination import Page
 from fastapi_pagination.ext.sqlalchemy import paginate
-from sqlalchemy import select, update, or_, func
+from sqlalchemy import select, update, or_, func, text
 from sqlalchemy.orm import joinedload, selectinload
 from .schemas import (
     UserSchema,
@@ -23,7 +23,9 @@ from .schemas import (
     ResetPasswordBody,
     UpdateUserBody,
     ReviewIn,
-    ReviewOut
+    ReviewOut,
+    WatchlistInSchema,
+    WatchlistOutSchema
 )
 from .models import User, Reviews
 import bcrypt
@@ -437,3 +439,65 @@ async def get_reviews(
 	# Return most recent 9 reviews
 	response = await session.execute(select(Reviews).limit(10).order_by(desc(Reviews.date_created)))
 	return response
+
+
+@router.get(
+    "/watchlist",
+    response_model=WatchlistOutSchema,
+    dependencies=[Depends(RBAChecker(roles=['admin','client','demo'], permissions=None))]
+)
+async def get_watchlist(
+    session: AsyncSession = Depends(get_session),
+    user: dict = Depends(ValidateJWT)
+):
+    stmt      = select(User.id, User.watchlist).where(User.id == user.get("id"))
+    result    = await session.execute(stmt)
+    watchlist = result.first()
+    print(watchlist)
+    return watchlist
+
+@router.post(
+    "/watchlist",
+    dependencies=[Depends(RBAChecker(roles=['admin','client','demo'], permissions=None))]
+)
+async def upsert_watchlist(
+    data: WatchlistInSchema,
+    session: AsyncSession = Depends(get_session),
+    user: dict = Depends(ValidateJWT)
+):
+    # Validate/normalize incoming watchlist dict
+    symbol = (data.watchlist.get("symbol") or "").strip()
+    market = (data.watchlist.get("market") or "").strip()
+    if not symbol or not market:
+        raise HTTPException(status_code=422, detail="watchlist must include non-empty 'symbol' and 'market'")
+
+    symbol = symbol.upper()
+    market = market.upper()
+
+    # One-shot UPDATE: init to [] if NULL, append only if (symbol,market) not present
+    sql = text("""
+        UPDATE users
+        SET watchlist = COALESCE(watchlist, '[]'::jsonb)
+                         || jsonb_build_array(jsonb_build_object('symbol', :symbol, 'market', :market))
+        WHERE id = :uid
+          AND NOT EXISTS (
+              SELECT 1
+              FROM jsonb_array_elements(COALESCE(watchlist, '[]'::jsonb)) el
+              WHERE el->>'symbol' = :symbol AND el->>'market' = :market
+          )
+        RETURNING id, watchlist
+    """)
+
+    res = await session.execute(sql, {"symbol": symbol, "market": market, "uid": user.get("id")})
+    updated = res.first()
+
+    if updated is None:
+        res2 = await session.execute(select(User.id, User.watchlist).where(User.id == user.get("id")))
+        row = res2.first()
+        if not row:
+            raise HTTPException(status_code=404, detail="User not found")
+        await session.commit()
+        return WatchlistInSchema(id=row.id, watchlist={"items": row.watchlist})
+
+    await session.commit()
+    return WatchlistInSchema(id=updated.id, watchlist={"items": updated.watchlist})

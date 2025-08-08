@@ -1,5 +1,5 @@
 from enum import Enum
-from sqlalchemy import  String, ForeignKey, Text, Enum as SAENUM, func, Boolean, Date, Integer
+from sqlalchemy import  String, ForeignKey, Text, Enum as SAENUM, func, Boolean, Date, Integer, JSON
 from datetime import datetime, date
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from typing import Optional, List
@@ -27,6 +27,7 @@ class User(Base):
     img_path: Mapped[Optional[str]]                                = mapped_column(Text)
     refresh_token: Mapped[Optional[str]]                           = mapped_column(String(255))
     forgot_token: Mapped[Optional[str]]                            = mapped_column(String(255))
+    watchlist: Mapped[Optional[dict]]                              = mapped_column(JSON, nullable=True)
     user_permissions: Mapped[List["UserPermission"]]               = relationship(back_populates="user")
     accounts: Mapped[List["components.accounts.models.Account"]]   = relationship("Account", back_populates="user")
     apis: Mapped[List["components.api.models.Api"]]                = relationship("Api", back_populates="user")

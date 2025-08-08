@@ -1,6 +1,6 @@
 from pydantic import BaseModel, EmailStr, model_validator, EmailStr, Field
 from enum import Enum
-from typing import Optional, List, Self
+from typing import Optional, List, Self, Dict, Any
 from datetime import datetime, date
 
 
@@ -29,6 +29,7 @@ class UserSchema(BaseModel):
     img_path: Optional[str] = None
     refresh_token: Optional[str] = None
     forgot_token: Optional[str] = None
+    watchlist:  Optional[List[Dict[str, Any]]] = None
     user_permissions: List[UserPermission] = []
 
     class Config:
@@ -96,3 +97,14 @@ class ReviewOut(BaseModel):
 	
 	class Config:
 		from_attributes = True
+          
+
+class WatchlistInSchema(BaseModel):
+    watchlist: Dict[str, Any]
+
+class WatchlistOutSchema(BaseModel):
+    id: int
+    watchlist: Optional[List[Dict[str, Any]]]
+
+    class Config:
+        from_attributes = True

@@ -151,6 +151,20 @@ async def get_tickers(
 
     return await paginate(session, query=query)
 
+@router.get(
+    "/list",
+    response_model=List[SymbolSchema],
+    dependencies=[
+        Depends(RBAChecker(roles=['admin', 'client', 'demo'], permissions=None))]
+)
+async def get_list_of_tickers(
+    request: Request,
+    session: AsyncSession = Depends(get_session),
+):
+    result  = await session.execute(select(Tickers))
+    tickers = result.scalars().all()
+    return tickers
+
 @router.delete(
     "/delete",
     dependencies=[
