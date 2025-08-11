@@ -1,4 +1,4 @@
-from pydantic import BaseModel, EmailStr, model_validator, EmailStr, Field, field_validator
+from pydantic import BaseModel, EmailStr, model_validator, EmailStr, Field, field_validator, ConfigDict, constr
 from enum import Enum
 from typing import Optional, List, Self, Dict, Any
 from datetime import datetime, date
@@ -99,8 +99,13 @@ class ReviewOut(BaseModel):
 		from_attributes = True
           
 
+class WatchlistItem(BaseModel):
+     model_config = ConfigDict(extra="forbid")
+     symbol: str
+     market: str
+
 class WatchlistInSchema(BaseModel):
-    watchlist: Dict[str, Any]
+    watchlist: WatchlistItem
 
 class WatchlistOutSchema(BaseModel):
     watchlist: Optional[List[Dict[str, Any]]]
@@ -115,3 +120,6 @@ class WatchlistOutSchema(BaseModel):
 
     class Config:
         from_attributes = True
+
+class WatchlistDeleteSchema(BaseModel):
+    watchlist: WatchlistItem

@@ -18,6 +18,8 @@ import { loader } from "~/routes/_index";
 
 const Watchlist = () => {
   const { watchListData, tickersData } = useLoaderData<typeof loader>();
+  const submit = useSubmit();
+
   console.log(tickersData);
 
   const tickerOptions = tickersData?.map(
@@ -37,9 +39,14 @@ const Watchlist = () => {
   const handleAddTicker = () => {
     if (!selectedOption) return;
     const symbol = selectedOption.value.split("-").at(1) as string;
-
-
-    setSelectedOption(null); // Clear selection
+    const market = selectedOption.value.split("-").at(0) as string;
+    const data = {
+      symbol,
+      market,
+      action: "add_watchlist_item"
+    };
+    submit(data, {method: "POST"});
+    setSelectedOption(null); 
   };
 
   const handleRemoveTicker = (symbol: string) => {

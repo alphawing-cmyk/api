@@ -61,11 +61,26 @@ export async function action({ request }: ActionFunctionArgs) {
   let res;
   let cookieHeader;
 
+  console.log(formData);
   switch (formData.get("action")) {
     case "add_watchlist_item":
-      data = {};
+      data = {
+        watchlist: {
+          symbol: formData.get("symbol"),
+          market: formData.get("market"),
+        },
+      };
+      res = await ApiClient("py", "POST", "/watchlist", request, data);
+      break;
 
-      res = await ApiClient("py", "POST", "/watchlist/add", request, data);      
+    case "remove_watchlist_item":
+      data = {
+        watchlist: {
+          symbol: formData.get("symbol"),
+          market: formData.get("market"),
+        },
+      };
+      res = await ApiClient("py", "POST", "/watchlist", request, data);
       break;
   }
 
@@ -105,7 +120,6 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
 }
-
 
 export default function DashboardHome() {
   const loaderData = useLoaderData<typeof loader>();

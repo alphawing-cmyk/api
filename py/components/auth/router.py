@@ -446,7 +446,7 @@ async def get_reviews(
     response_model=WatchlistOutSchema,
     dependencies=[Depends(RBAChecker(roles=['admin','client','demo'], permissions=None))]
 )
-async def get_watchlist(
+async def get_watchlist_items(
     session: AsyncSession = Depends(get_session),
     user: dict = Depends(ValidateJWT)
 ):
@@ -459,14 +459,14 @@ async def get_watchlist(
     "/watchlist",
     dependencies=[Depends(RBAChecker(roles=['admin','client','demo'], permissions=None))]
 )
-async def upsert_watchlist(
+async def upsert_watchlist_item(
     data: WatchlistInSchema,
     session: AsyncSession = Depends(get_session),
     user: dict = Depends(ValidateJWT)
 ):
     # Validate/normalize incoming watchlist dict
-    symbol = (data.watchlist.get("symbol") or "").strip()
-    market = (data.watchlist.get("market") or "").strip()
+    symbol = (data.watchlist.symbol or "").strip()
+    market = (data.watchlist.market or "").strip()
     if not symbol or not market:
         raise HTTPException(status_code=422, detail="watchlist must include non-empty 'symbol' and 'market'")
 
@@ -500,3 +500,15 @@ async def upsert_watchlist(
 
     await session.commit()
     return WatchlistInSchema(id=updated.id, watchlist={"items": updated.watchlist})
+
+
+@router.delete(
+    "/watchlist",
+    dependencies=[Depends(RBAChecker(roles=['admin','client','demo'], permissions=None))]
+)
+async def delete_watchlist_item(
+    data: WatchlistInSchema,
+    session: AsyncSession = Depends(get_session),
+    user: dict = Depends(ValidateJWT)
+):
+    pass
