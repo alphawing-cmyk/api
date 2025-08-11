@@ -87,7 +87,6 @@ const AddASymbol = ({userRole}:{userRole: string | undefined}) => {
   });
 
   useEffect(() => {
-    console.log(actionData);
     if (actionData && "success" in actionData && actionData.success) {
       toast({
         title: "Success",

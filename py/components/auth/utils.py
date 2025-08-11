@@ -60,7 +60,6 @@ def ValidateJWTByToken(token: str)-> dict | None:
         return None
         
 def ValidateJWT(request: Request):
-    print(request.cookies)
     if request.headers.get('bearer') != None:
         token  = request.headers.get('bearer')
         try:
@@ -79,18 +78,13 @@ def ValidateJWT(request: Request):
         try:
          decodeObj = DecodeBase64Token(cookie)
          claims    = decodeObj.get("claims").get("user")
-         print(claims)
          params    = jwt.decode(claims.get("accessToken"), settings.jwt_secret, algorithms=['HS256'])
-         print(params)
          return params
         except jwt.DecodeError:
-           print(jwt.DecodeError)
            raise HTTPException(status_code=401, detail="Not Authorized")
         except jwt.InvalidTokenError:
-           print(str(jwt.InvalidTokenError))
            raise HTTPException(status_code=401, detail="Not Authorized")
         except Exception as e:
-            print(e)
             raise HTTPException(status_code=401, detail="Not Authorized")
         
     if request.cookies.get('accessToken') != None:
@@ -135,8 +129,6 @@ def generate_jwt_keys(user: User) -> dict:
         refresh_exp = int(settings.refresh_token_expire_minutes 
                          if settings.refresh_token_expire_minutes else 10080) * 60
 
-        print(access_exp)
-        print(refresh_exp)
         access_token = jwt.encode(
             {
                 "id": user.id,

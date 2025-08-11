@@ -22,7 +22,7 @@ import clsx from "clsx";
 import { useLocation } from "@remix-run/react";
 import { useEffect, useState } from "react";
 import { getApiUrl } from "./lib/utils";
-import ApiClient from "./lib/apiClient";
+import { getSession, setUserSession } from "./lib/session";
 
 export const links: LinksFunction = () => [
   { rel: "preconnect", href: "https://fonts.googleapis.com" },
@@ -69,6 +69,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const url = new URL(request.url);
   const pathname = url.pathname;
   const cookieHeader = request.headers.get("cookie");
+  let updatedCookie;
 
   let res = await fetch((getApiUrl("py") as string) + "/identify", {
     method: "GET",
@@ -80,10 +81,45 @@ export async function loader({ request }: LoaderFunctionArgs) {
   });
 
   let user;
-  if (res.status === 200) {
+  if (res.ok) {
     user = await res.json();
-  } else if(res.status === 401) {
+  } else if (res.status === 401) {
+    let res = await fetch((getApiUrl("py") as string) + "/refresh", {
+      method: "POST",
+      credentials: "include",
+      headers: {
+        "Content-Type": "application/json",
+        ...(cookieHeader && { cookie: cookieHeader }),
+      },
+    });
 
+    if (res.ok) {
+      let tokenData = await res.json();
+
+      const cookieData = {
+        role: tokenData.role,
+        username: tokenData.username,
+        accessToken: tokenData.accessToken,
+        refreshToken: tokenData.refreshToken,
+        email: tokenData.email,
+      };
+
+      let session = await getSession(request.headers.get("Cookie"));
+      let cookieHeader = await setUserSession(session, cookieData);
+      return Response.json(
+        {},
+        {
+          status: 200,
+          headers: cookieHeader
+            ? {
+                "Set-Cookie": cookieHeader,
+              }
+            : undefined,
+        }
+      );
+    } else {
+      return redirect("/login", 302);
+    }
   } else {
     if (pathname.startsWith("/dashboard")) {
       return redirect("/login", 302);
