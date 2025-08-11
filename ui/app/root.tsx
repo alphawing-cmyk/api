@@ -69,7 +69,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const url = new URL(request.url);
   const pathname = url.pathname;
   const cookieHeader = request.headers.get("cookie");
-  let updatedCookie;
 
   let res = await fetch((getApiUrl("py") as string) + "/identify", {
     method: "GET",

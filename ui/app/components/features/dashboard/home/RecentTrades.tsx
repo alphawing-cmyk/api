@@ -31,7 +31,6 @@ const RecentTrades = () => {
     }
 
     setActivePage(newPage);
-    console.log(`Changed to page: ${newPage}`);
   };
 
   useEffect(() => {

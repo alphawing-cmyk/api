@@ -116,7 +116,6 @@ const AddASymbol = ({userRole}:{userRole: string | undefined}) => {
       alt_names: values.alt_names ? JSON.stringify(values.alt_names) : null,
     };
 
-    console.log("Submitting:", payload);
     submit(payload, { method: "POST" });
   };
 

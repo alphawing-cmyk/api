@@ -65,8 +65,6 @@ export async function action({ request }: ActionFunctionArgs) {
         request,
         data
       );
-
-        console.log(res);
       break;
   }
 

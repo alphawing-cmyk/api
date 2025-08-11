@@ -17,11 +17,11 @@ import { loader } from "~/routes/_index";
 
 const Watchlist = () => {
   const { watchListData, tickersData } = useLoaderData<typeof loader>();
-  console.log(watchListData);
+  console.log(tickersData);
 
   const tickerOptions = tickersData?.map(
     (ticker: { [key: string]: string }) => ({
-      value: ticker.symbol,
+      value: `${ticker.market}-${ticker.symbol}`,
       label: `${ticker.symbol} — ${ticker.name} (${ticker.market})`,
     })
   );
@@ -35,7 +35,7 @@ const Watchlist = () => {
 
   const handleAddTicker = () => {
     if (!selectedOption) return;
-    const symbol = selectedOption.value;
+    const symbol = selectedOption.value.split("-").at(1) as string;
 
     if (!watchlist.includes(symbol)) {
       setWatchlist([symbol, ...watchlist]);
@@ -43,6 +43,7 @@ const Watchlist = () => {
 
     if (!searchHistory.includes(symbol)) {
       setSearchHistory([symbol, ...searchHistory]);
+      localStorage.setItem("watchlist", searchHistory.join(","));
     }
 
     setSelectedOption(null); // Clear selection

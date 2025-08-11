@@ -161,7 +161,7 @@ async def get_list_of_tickers(
     request: Request,
     session: AsyncSession = Depends(get_session),
 ):
-    result  = await session.execute(select(Tickers))
+    result  = await session.execute(select(Tickers).order_by(Tickers.name))
     tickers = result.scalars().all()
     return tickers
 

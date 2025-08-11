@@ -58,7 +58,6 @@ const AddAccount = () => {
   const submit = useSubmit();
 
   useEffect(() => {
-    console.log(layoutData);
     if (
       layoutData?.data &&
       typeof layoutData.data === "object" &&
