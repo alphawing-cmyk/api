@@ -12,8 +12,9 @@ import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { ScrollArea } from "~/components/ui/scroll-area";
 import { Avatar, AvatarFallback } from "~/components/ui/avatar";
-import { useLoaderData } from "@remix-run/react";
+import { useLoaderData, useSubmit } from "@remix-run/react";
 import { loader } from "~/routes/_index";
+
 
 const Watchlist = () => {
   const { watchListData, tickersData } = useLoaderData<typeof loader>();
@@ -37,14 +38,6 @@ const Watchlist = () => {
     if (!selectedOption) return;
     const symbol = selectedOption.value.split("-").at(1) as string;
 
-    if (!watchlist.includes(symbol)) {
-      setWatchlist([symbol, ...watchlist]);
-    }
-
-    if (!searchHistory.includes(symbol)) {
-      setSearchHistory([symbol, ...searchHistory]);
-      localStorage.setItem("watchlist", searchHistory.join(","));
-    }
 
     setSelectedOption(null); // Clear selection
   };
@@ -82,26 +75,30 @@ const Watchlist = () => {
             <h4 className="text-sm font-semibold">Watchlist</h4>
             <ScrollArea className="max-h-48 pr-2">
               <div className="space-y-2">
-                {watchListData?.watchlist?.map((item : {market: string, symbol: string}) => (
-                  <div
-                    key={item.symbol}
-                    className="flex items-center justify-between border rounded p-2 hover:bg-muted transition-all"
-                  >
-                    <div className="flex items-center gap-3">
-                      <Avatar className="h-8 w-8">
-                        <AvatarFallback>{item.symbol.slice(0, 2)}</AvatarFallback>
-                      </Avatar>
-                      <span className="font-medium">{item.symbol}</span>
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleRemoveTicker(item.symbol)}
+                {watchListData?.watchlist?.map(
+                  (item: { market: string; symbol: string }) => (
+                    <div
+                      key={item.symbol}
+                      className="flex items-center justify-between border rounded p-2 hover:bg-muted transition-all"
                     >
-                      Remove
-                    </Button>
-                  </div>
-                ))}
+                      <div className="flex items-center gap-3">
+                        <Avatar className="h-8 w-8">
+                          <AvatarFallback>
+                            {item.symbol.slice(0, 2)}
+                          </AvatarFallback>
+                        </Avatar>
+                        <span className="font-medium">{item.symbol}</span>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleRemoveTicker(item.symbol)}
+                      >
+                        Remove
+                      </Button>
+                    </div>
+                  )
+                )}
               </div>
             </ScrollArea>
           </div>

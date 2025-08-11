@@ -1,6 +1,6 @@
 import MetricCard from "~/components/features/dashboard/common/MetricCard";
 import { Landmark, DollarSign, Coins, Gavel } from "lucide-react";
-import { LoaderFunctionArgs } from "@remix-run/node";
+import { LoaderFunctionArgs, ActionFunctionArgs } from "@remix-run/node";
 import ApiClient from "~/lib/apiClient";
 import type { ApiResp } from "~/lib/apiClient";
 import { useLoaderData, useMatches } from "@remix-run/react";
@@ -54,6 +54,58 @@ export async function loader({ request }: LoaderFunctionArgs) {
     return redirect("/login");
   }
 }
+
+export async function action({ request }: ActionFunctionArgs) {
+  const formData = await request.formData();
+  let data = {};
+  let res;
+  let cookieHeader;
+
+  switch (formData.get("action")) {
+    case "add_watchlist_item":
+      data = {};
+
+      res = await ApiClient("py", "POST", "/watchlist/add", request, data);      
+      break;
+  }
+
+  if (
+    typeof res === "object" &&
+    "cookieHeader" in res &&
+    res.cookieHeader !== null &&
+    res.success
+  ) {
+    cookieHeader = res.cookieHeader;
+  }
+
+  if (typeof res === "object" && "success" in res && res.success) {
+    return Response.json(
+      {
+        success: true,
+        action: formData.get("action"),
+      },
+      {
+        status: 200,
+        headers: cookieHeader
+          ? {
+              "Set-Cookie": cookieHeader,
+            }
+          : undefined,
+      }
+    );
+  } else {
+    return Response.json(
+      {
+        success: false,
+        action: formData.get("action"),
+      },
+      {
+        status: 500,
+      }
+    );
+  }
+}
+
 
 export default function DashboardHome() {
   const loaderData = useLoaderData<typeof loader>();
