@@ -2,8 +2,6 @@ from pydantic import BaseModel, EmailStr, model_validator, EmailStr, Field, fiel
 from enum import Enum
 from typing import Optional, List, Self, Dict, Any
 from datetime import datetime, date
-from components.symbols.schemas import SymbolSchema
-
 
 class Role(str, Enum):
     demo = "demo"
@@ -100,13 +98,22 @@ class ReviewOut(BaseModel):
 		from_attributes = True
           
 
-
 class WatchlistInSchema(BaseModel):
     symbol: str
     market: str
 
+
+class WatchlistItem(BaseModel):
+     ticker_id: int
+     symbol: str
+     market: str
+     industry: Optional[str] = None
+     
+
+     pass
+
 class WatchlistOutSchema(BaseModel):
-    watchlist: Optional[List[SymbolSchema]] = []
+    watchlist: Optional[List[WatchlistItem]] = []
 
     @field_validator("watchlist")
     @classmethod
