@@ -61,26 +61,21 @@ export async function action({ request }: ActionFunctionArgs) {
   let res;
   let cookieHeader;
 
-  console.log(formData);
   switch (formData.get("action")) {
     case "add_watchlist_item":
       data = {
-        watchlist: {
-          symbol: formData.get("symbol"),
-          market: formData.get("market"),
-        },
+        symbol: formData.get("symbol"),
+        market: formData.get("market"),
       };
       res = await ApiClient("py", "POST", "/watchlist", request, data);
       break;
 
     case "remove_watchlist_item":
       data = {
-        watchlist: {
           symbol: formData.get("symbol"),
           market: formData.get("market"),
-        },
       };
-      res = await ApiClient("py", "POST", "/watchlist", request, data);
+      res = await ApiClient("py", "DELETE", "/watchlist", request, data);
       break;
   }
 

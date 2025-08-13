@@ -13,7 +13,7 @@ from .utils import (
 )
 from fastapi_pagination import Page
 from fastapi_pagination.ext.sqlalchemy import paginate
-from sqlalchemy import select, update, or_, func, text
+from sqlalchemy import select, update, or_, func, text, tuple_
 from sqlalchemy.orm import joinedload, selectinload
 from .schemas import (
     UserSchema,
@@ -32,6 +32,7 @@ import bcrypt
 from components.utils import get_cookie_options
 from components.services.emailer import Emailer
 from typing import Optional, Annotated, List
+from components.symbols.models import Tickers, Historical
 
 router = APIRouter()
 
@@ -450,30 +451,38 @@ async def get_watchlist_items(
     session: AsyncSession = Depends(get_session),
     user: dict = Depends(ValidateJWT)
 ):
-    stmt      = select(User.id, User.watchlist).where(User.id == user.get("id"))
-    result    = await session.execute(stmt)
-    watchlist = result.first()
-    return watchlist
+    stmt        = select(User.id, User.watchlist).where(User.id == user.get("id"))
+    result      = await session.execute(stmt)
+    watchlist   = result.first()
+    conditions  = []
+
+    for item in watchlist[1]:
+        if isinstance(item, dict):
+            conditions.append((item.get("symbol"), item.get("market")))
+    
+    if conditions and watchlist:
+        tickers_stmt = select(Tickers).options(joinedload(Tickers.historical)).where(
+            tuple_(Tickers.symbol, Tickers.market).in_(conditions)
+        )
+        res       = await session.execute(tickers_stmt)
+        tickers   = res.unique().scalars().all()
+        return {"watchlist": tickers}
+       
 
 @router.post(
     "/watchlist",
-    dependencies=[Depends(RBAChecker(roles=['admin','client','demo'], permissions=None))]
+    dependencies=[Depends(RBAChecker(roles=['admin','client','demo'], permissions=None))],
+    response_model=WatchlistOutSchema,
 )
-async def upsert_watchlist_item(
+async def update_watchlist_item(
     data: WatchlistInSchema,
     session: AsyncSession = Depends(get_session),
     user: dict = Depends(ValidateJWT)
 ):
     # Validate/normalize incoming watchlist dict
-    symbol = (data.watchlist.symbol or "").strip()
-    market = (data.watchlist.market or "").strip()
-    if not symbol or not market:
-        raise HTTPException(status_code=422, detail="watchlist must include non-empty 'symbol' and 'market'")
+    symbol = (data.symbol or "").strip()
+    market = (data.market or "").strip()
 
-    symbol = symbol.upper()
-    market = market.upper()
-
-    # One-shot UPDATE: init to [] if NULL, append only if (symbol,market) not present
     sql = text("""
         UPDATE users
         SET watchlist = COALESCE(watchlist, '[]'::jsonb)
@@ -496,10 +505,10 @@ async def upsert_watchlist_item(
         if not row:
             raise HTTPException(status_code=404, detail="User not found")
         await session.commit()
-        return WatchlistInSchema(id=row.id, watchlist={"items": row.watchlist})
+        return {"watchlist": row.watchlist}
 
     await session.commit()
-    return WatchlistInSchema(id=updated.id, watchlist={"items": updated.watchlist})
+    return {"watchlist": updated.watchlist}
 
 
 @router.delete(
@@ -511,4 +520,45 @@ async def delete_watchlist_item(
     session: AsyncSession = Depends(get_session),
     user: dict = Depends(ValidateJWT)
 ):
-    pass
+    
+    try:
+        sql = text("""
+           UPDATE users u
+            SET watchlist = sub.filtered
+            FROM (
+            SELECT u2.id,
+                    COALESCE(
+                    jsonb_agg(elem) FILTER (
+                        WHERE NOT (elem->>'market' = :market AND elem->>'symbol' = :symbol)
+                    ),
+                    '[]'::jsonb
+                    ) AS filtered
+            FROM users u2
+            LEFT JOIN LATERAL jsonb_array_elements(u2.watchlist) AS elem ON TRUE
+            GROUP BY u2.id
+            ) AS sub
+            WHERE u.id = sub.id
+            AND u.id = :uid;
+        """)
+
+        await session.execute(sql, 
+            {
+                "symbol": data.symbol, 
+                "market": data.market, 
+                "uid": user.get("id")
+            }
+        )
+
+        await session.commit()
+        return JSONResponse(
+                status_code=status.HTTP_200_OK,
+                content={"success": True,
+                         "message": "Successfully deleted watchlist entry"}
+            )
+    except Exception as e:
+     print(e)
+     return JSONResponse(
+                status_code=500,
+                content={"success": False,
+                         "message": "Something went wrong, please try again."}
+            )

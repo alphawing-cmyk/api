@@ -3,6 +3,7 @@ from pydantic import BaseModel, Field, validator
 from datetime import datetime
 from typing import Union
 import json
+from decimal import Decimal
 
 
 class AddSymbolBody(BaseModel):
@@ -43,6 +44,30 @@ class UpdateSymbolBody(BaseModel):
 class DeleteSymbolBody(BaseModel):
     id: int
 
+
+class HistoricalSchema(BaseModel):
+    id: int
+    custom_id: str
+    symbol: str
+    milliseconds: Optional[int] = 0
+    duration: Optional[str] = None
+    open: Decimal
+    low: Decimal
+    high: Decimal
+    close: Decimal
+    adj_close: Optional[Decimal] = None
+    volume: Optional[Decimal] = Decimal("0")
+    vwap: Optional[Decimal] = Decimal("0")
+    timestamp: datetime
+    transactions: Optional[int] = 0
+    source: str
+    market: str
+    ticker_id: Optional[int] = None
+
+    class Config:
+        from_attributes = True
+
+
 class SymbolSchema(BaseModel):
     id: int
     symbol: str
@@ -51,6 +76,7 @@ class SymbolSchema(BaseModel):
     industry: Optional[str] = Field(None, max_length=255)
     market: str
     market_cap: Optional[str] = Field(None, max_length=255)
+    historical: Optional[List[HistoricalSchema]] = None
 
 class SymbolDataSchema(BaseModel):
     min_close: Optional[float] = None

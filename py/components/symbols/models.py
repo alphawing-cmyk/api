@@ -13,7 +13,7 @@ class Tickers(Base):
     industry: Mapped[str]                  = mapped_column(String(length=255), nullable=True)
     market: Mapped[str]                    = mapped_column(String(length=255), nullable=False)
     market_cap: Mapped[str]                = mapped_column(String(length=255), nullable=True)
-    historical: Mapped[List["Historical"]] = relationship(back_populates="ticker", cascade="all, delete-orphan")
+    historical: Mapped[List["Historical"]] = relationship(back_populates="ticker", cascade="all, delete-orphan",  lazy="selectin")
 
     def as_dict(self):
         return {"id": self.id, 
@@ -46,7 +46,7 @@ class Historical(Base):
     transactions: Mapped[int]   = mapped_column(Integer,default=0)
     source: Mapped[str]         = mapped_column(String(length=30), nullable=False)
     market: Mapped[str]         = mapped_column(String(length=30), nullable=False)
-    ticker: Mapped["Tickers"]   = relationship("Tickers", back_populates="historical")
+    ticker: Mapped["Tickers"]   = relationship("Tickers", back_populates="historical", lazy="selectin")
 
     def __repr__(self):
         return f"{self.symbol} | {self.timestamp} | {self.duration}"
