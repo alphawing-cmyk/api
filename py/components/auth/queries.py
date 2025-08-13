@@ -1,6 +1,15 @@
-from sqlalchemy import text, bindparam
+from sqlalchemy import text, bindparam, String
+from sqlalchemy.dialects.postgresql import ARRAY
+
 
 GetWatchlistQuery = text("""
+    WITH pairs(symbol, market) AS (
+    SELECT DISTINCT *
+    FROM UNNEST(
+        CAST(:symbols AS text[]),
+        CAST(:markets AS text[])
+    )
+    )
     SELECT
         t.id AS ticker_id,
         t.symbol AS symbol,
@@ -19,6 +28,8 @@ GetWatchlistQuery = text("""
         h.source,
         h.market
     FROM tickers t
+    JOIN pairs p
+    ON t.symbol = p.symbol AND t.market = p.market
     LEFT JOIN (
         SELECT *
         FROM (
@@ -29,12 +40,17 @@ GetWatchlistQuery = text("""
                     ORDER BY h."timestamp" DESC
                 ) AS rn
             FROM historical h
+            JOIN tickers t2 ON t2.id = h.ticker_id
+            JOIN pairs p2 ON p2.symbol = t2.symbol AND p2.market = t2.market
         ) ranked
         WHERE rn <= 200
     ) h ON h.ticker_id = t.id
-    WHERE (t.symbol, t.market) IN :conditions
     ORDER BY t.id, h."timestamp" DESC
-""").bindparams(bindparam("conditions", expanding=True))
+    """).bindparams(
+        bindparam("symbols", type_=ARRAY(String())),
+        bindparam("markets", type_=ARRAY(String())),
+)
+
 
 
 UpdateWatchlistQuery = text("""

@@ -459,16 +459,22 @@ async def get_watchlist_items(
     stmt        = select(User.id, User.watchlist).where(User.id == user.get("id"))
     result      = await session.execute(stmt)
     watchlist   = result.first()
-    conditions  = []
+
+    print(watchlist)
+    conditions  = {"symbols": [], "markets": []}
 
     for item in watchlist[1]:
         if isinstance(item, dict):
-            conditions.append({"symbol": item.get("symbol"), "market": item.get("market")})
+            conditions["symbols"].append(item.get("symbol"))
+            conditions["markets"].append(item.get("market"))
 
     if conditions and watchlist:
-        res       = await session.execute(GetWatchlistQuery, {"conditions": conditions})
-        tickers   = res.unique().scalars().all()
-        return {"watchlist": tickers}
+        res       = await session.execute(GetWatchlistQuery, 
+                            {"symbols": conditions["symbols"], "markets": conditions["markets"] 
+                    })
+        historical   = res.mappings().all()
+        print(historical)
+        return {"watchlist": historical}
        
 
 @router.post(
