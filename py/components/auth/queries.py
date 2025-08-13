@@ -13,6 +13,8 @@ GetWatchlistQuery = text("""
     SELECT
         t.id AS ticker_id,
         t.symbol AS symbol,
+        t.market AS market,
+        t.industry AS industry,
         h.custom_id,
         h.milliseconds,
         h.duration,

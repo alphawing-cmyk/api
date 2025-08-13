@@ -473,7 +473,8 @@ async def get_watchlist_items(
                             {"symbols": conditions["symbols"], "markets": conditions["markets"] 
                     })
         historical   = res.mappings().all()
-        print(historical)
+    
+    
         return {"watchlist": historical}
        
 
