@@ -32,7 +32,12 @@ import bcrypt
 from components.utils import get_cookie_options
 from components.services.emailer import Emailer
 from typing import Optional, Annotated, List
-from components.symbols.models import Tickers, Historical
+from components.symbols.models import Tickers
+from .queries import (
+    GetWatchlistQuery,
+    UpdateWatchlistQuery, 
+    DeleteWatchlistQuery
+)
 
 router = APIRouter()
 
@@ -458,13 +463,10 @@ async def get_watchlist_items(
 
     for item in watchlist[1]:
         if isinstance(item, dict):
-            conditions.append((item.get("symbol"), item.get("market")))
-    
+            conditions.append({"symbol": item.get("symbol"), "market": item.get("market")})
+
     if conditions and watchlist:
-        tickers_stmt = select(Tickers).options(joinedload(Tickers.historical)).where(
-            tuple_(Tickers.symbol, Tickers.market).in_(conditions)
-        )
-        res       = await session.execute(tickers_stmt)
+        res       = await session.execute(GetWatchlistQuery, {"conditions": conditions})
         tickers   = res.unique().scalars().all()
         return {"watchlist": tickers}
        
@@ -483,20 +485,9 @@ async def update_watchlist_item(
     symbol = (data.symbol or "").strip()
     market = (data.market or "").strip()
 
-    sql = text("""
-        UPDATE users
-        SET watchlist = COALESCE(watchlist, '[]'::jsonb)
-                         || jsonb_build_array(jsonb_build_object('symbol', :symbol, 'market', :market))
-        WHERE id = :uid
-          AND NOT EXISTS (
-              SELECT 1
-              FROM jsonb_array_elements(COALESCE(watchlist, '[]'::jsonb)) el
-              WHERE el->>'symbol' = :symbol AND el->>'market' = :market
-          )
-        RETURNING id, watchlist
-    """)
-
-    res = await session.execute(sql, {"symbol": symbol, "market": market, "uid": user.get("id")})
+    res = await session.execute(UpdateWatchlistQuery, 
+            {"symbol": symbol, "market": market, "uid": user.get("id")}
+        )
     updated = res.first()
 
     if updated is None:
@@ -522,26 +513,7 @@ async def delete_watchlist_item(
 ):
     
     try:
-        sql = text("""
-           UPDATE users u
-            SET watchlist = sub.filtered
-            FROM (
-            SELECT u2.id,
-                    COALESCE(
-                    jsonb_agg(elem) FILTER (
-                        WHERE NOT (elem->>'market' = :market AND elem->>'symbol' = :symbol)
-                    ),
-                    '[]'::jsonb
-                    ) AS filtered
-            FROM users u2
-            LEFT JOIN LATERAL jsonb_array_elements(u2.watchlist) AS elem ON TRUE
-            GROUP BY u2.id
-            ) AS sub
-            WHERE u.id = sub.id
-            AND u.id = :uid;
-        """)
-
-        await session.execute(sql, 
+        await session.execute(DeleteWatchlistQuery, 
             {
                 "symbol": data.symbol, 
                 "market": data.market, 
