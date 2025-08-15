@@ -16,6 +16,26 @@ import { useLoaderData, useSubmit } from "@remix-run/react";
 import { loader } from "~/routes/_index";
 import { ArrowRight, ArrowDownRight, Minus, ArrowUpRight } from "lucide-react";
 
+export interface HistoricalItem {
+  ticker_id?: number;
+  symbol?: string;
+  market?: string;
+  industry?: string;
+  custom_id?: string;
+  milliseconds?: number;
+  open?: number;
+  high?: number;
+  low?: number;
+  close?: number;
+  adj_close?: number;
+  volume?: number;
+  vwap?: number;
+  timestamp?: string;
+  transactions?: number;
+  source?: string;
+  duration?: string;
+}
+
 function priceColor(delta: number) {
   if (delta > 0) return "text-green-600";
   if (delta < 0) return "text-red-600";
@@ -73,14 +93,22 @@ const Watchlist = () => {
   const { watchListData, tickersData } = useLoaderData<typeof loader>();
   const submit = useSubmit();
 
-  console.log(tickersData);
+  console.log(watchListData);
 
-  const tickerOptions = tickersData?.map(
-    (ticker: { [key: string]: string }) => ({
+  const watchListDataSorted = watchListData?.sort(
+    (a: { symbol: string }, b: { symbol: string }) => {
+      a.symbol.localeCompare(b.symbol);
+    }
+  );
+
+  const tickerOptions = tickersData
+    ?.sort((a: { symbol: string }, b: { symbol: string }) =>
+      a.symbol.localeCompare(b.symbol)
+    )
+    .map((ticker: { [key: string]: string }) => ({
       value: `${ticker.market}-${ticker.symbol}`,
       label: `${ticker.symbol} — ${ticker.name} (${ticker.market})`,
-    })
-  );
+    }));
 
   const [watchlist, setWatchlist] = useState<string[]>([]);
   const [searchHistory, setSearchHistory] = useState<string[]>([]);
@@ -105,7 +133,7 @@ const Watchlist = () => {
   const handleRemoveTicker = (symbol: string, market: string) => {
     console.log("Hit removed ticker");
     console.log(symbol);
-     const data = {
+    const data = {
       symbol,
       market,
       action: "remove_watchlist_item",
@@ -137,13 +165,17 @@ const Watchlist = () => {
           </div>
           <Button onClick={handleAddTicker}>Add</Button>
         </div>
-        {watchListData?.watchlist?.length > 0 && (
+        {watchListDataSorted?.length > 0 && (
           <div className="space-y-2">
             <h4 className="text-sm font-semibold">Watchlist</h4>
             <ScrollArea className="max-h-48 pr-2">
               <div className="space-y-2">
-                {watchListData.watchlist.map(
-                  (item: { market: string; symbol: string }) => {
+                {watchListDataSorted.map(
+                  (item: {
+                    market: string;
+                    symbol: string;
+                    historical: HistoricalItem[] | [];
+                  }) => {
                     const q = genFakeQuote(item.symbol);
                     const delta = q.last - q.prev_close;
 
@@ -178,7 +210,9 @@ const Watchlist = () => {
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => handleRemoveTicker(item.symbol, item.market)}
+                          onClick={() =>
+                            handleRemoveTicker(item.symbol, item.market)
+                          }
                         >
                           Remove
                         </Button>

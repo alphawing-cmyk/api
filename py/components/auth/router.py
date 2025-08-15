@@ -449,7 +449,7 @@ async def get_reviews(
 
 @router.get(
     "/watchlist",
-    response_model=WatchlistOutSchema,
+    response_model=Optional[List[WatchlistOutSchema]],
     dependencies=[Depends(RBAChecker(roles=['admin','client','demo'], permissions=None))]
 )
 async def get_watchlist_items(
@@ -459,11 +459,10 @@ async def get_watchlist_items(
     stmt        = select(User.id, User.watchlist).where(User.id == user.get("id"))
     result      = await session.execute(stmt)
     watchlist   = result.first()
-
-    print(watchlist)
+    watchlist   = sorted(watchlist[1], key=lambda x: x["symbol"]) if len(watchlist)>=1 else []
     conditions  = {"symbols": [], "markets": []}
 
-    for item in watchlist[1]:
+    for item in watchlist:
         if isinstance(item, dict):
             conditions["symbols"].append(item.get("symbol"))
             conditions["markets"].append(item.get("market"))
@@ -473,15 +472,18 @@ async def get_watchlist_items(
                             {"symbols": conditions["symbols"], "markets": conditions["markets"] 
                     })
         historical   = res.mappings().all()
-    
-    
-        return {"watchlist": historical}
-       
+
+
+        for item in watchlist:
+            item["historical"] = list(filter(lambda d: d["symbol"] == item.get("symbol") 
+                                             and d["market"] == item.get("market"), historical ))
+        
+        return watchlist
 
 @router.post(
     "/watchlist",
     dependencies=[Depends(RBAChecker(roles=['admin','client','demo'], permissions=None))],
-    response_model=WatchlistOutSchema,
+    response_model=List[WatchlistOutSchema],
 )
 async def update_watchlist_item(
     data: WatchlistInSchema,
@@ -503,11 +505,10 @@ async def update_watchlist_item(
         if not row:
             raise HTTPException(status_code=404, detail="User not found")
         await session.commit()
-        return {"watchlist": row.watchlist}
+        return row.watchlist
 
     await session.commit()
-    return {"watchlist": updated.watchlist}
-
+    return updated.watchlist
 
 @router.delete(
     "/watchlist",

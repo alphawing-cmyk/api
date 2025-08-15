@@ -1,4 +1,4 @@
-from pydantic import BaseModel, EmailStr, model_validator, EmailStr, Field, field_validator, ConfigDict, constr
+from pydantic import BaseModel, EmailStr, model_validator, EmailStr, Field, field_validator
 from enum import Enum
 from typing import Optional, List, Self, Dict, Any
 from datetime import datetime, date
@@ -102,29 +102,41 @@ class WatchlistInSchema(BaseModel):
     symbol: str
     market: str
 
+class HistoricalItem(BaseModel):
+    ticker_id: Optional[int] = None
+    symbol: Optional[str] = None
+    market: Optional[str] = None
+    industry: Optional[str] = None
+    custom_id: Optional[str] = None
+    milliseconds: Optional[int] = None
+    open: Optional[float] = None
+    high: Optional[float] = None
+    low: Optional[float] = None
+    close: Optional[float] = None
+    adj_close: Optional[float] = None
+    volume: Optional[int] = None
+    vwap: Optional[float] = None
+    timestamp: Optional[datetime] = None
+    transactions: Optional[int] = None
+    source: Optional[str] = None
 
-class WatchlistItem(BaseModel):
-     ticker_id: int
-     symbol: str
-     market: str
-     industry: Optional[str] = None
-     
-
-     pass
+    @field_validator("open", "high", "low", "close", "adj_close", mode="before")
+    def round_open_price(cls, v):
+        if v is None:
+             return v
+        try:
+            return round(float(v), 2)
+        except Exception as e:
+             return v
+        
+    class Config:
+          extra = "allow"
 
 class WatchlistOutSchema(BaseModel):
-    watchlist: Optional[List[WatchlistItem]] = []
+    market: str
+    symbol: str
+    historical: Optional[List[HistoricalItem]] = []
 
-    @field_validator("watchlist")
-    @classmethod
-    def sort_method(cls, v):
-         if isinstance(v, list):
-            return sorted(v, key=lambda item: item.symbol)
-         return v
-
-
-    class Config:
-        from_attributes = True
 
 class WatchlistDeleteSchema(BaseModel):
     symbol: str

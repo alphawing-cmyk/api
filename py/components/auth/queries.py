@@ -45,7 +45,7 @@ GetWatchlistQuery = text("""
             JOIN tickers t2 ON t2.id = h.ticker_id
             JOIN pairs p2 ON p2.symbol = t2.symbol AND p2.market = t2.market
         ) ranked
-        WHERE rn <= 200
+        WHERE rn <= 5
     ) h ON h.ticker_id = t.id
     ORDER BY t.id, h."timestamp" DESC
     """).bindparams(
