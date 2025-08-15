@@ -1,6 +1,6 @@
 import React from "react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, Bar, BarChart } from "recharts";
-import { TrendingUp, Activity, DollarSign, Users, Clock, BarChart3, MonitorCheck, Heart } from "lucide-react";
+import { TrendingUp, Activity, DollarSign, Users, Clock, BarChart3, MonitorCheck, Heart, Dot } from "lucide-react";
 import { Button } from "~/components/ui/button";
 import {
   Dialog,
@@ -17,8 +17,17 @@ import {
   ChartTooltip,
   ChartTooltipContent
 } from "~/components/ui/chart";
-import { ScrollArea } from "~/components/ui/scroll-area";
+import { ScrollArea, ScrollBar } from "~/components/ui/scroll-area";
 import type { ChartConfig } from "~/components/ui/chart";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "~/components/ui/table";
+import { Badge } from "~/components/ui/badge";
 
 
 // Types
@@ -90,6 +99,30 @@ const interactiveChartData = [
   { month: "May", desktop: 209, mobile: 130 },
   { month: "Jun", desktop: 214, mobile: 140 },
 ];
+
+/** --- Fake strategies table data --- */
+type StrategyRow = {
+  name: string;
+  trading: boolean;
+  totalTrades: number;
+  pnl: number; // total P&L in base currency
+  sharpe: number;
+};
+
+const strategiesData: StrategyRow[] = [
+  { name: "Mean Reversion v2", trading: true, totalTrades: 482, pnl: 41230.75, sharpe: 1.47 },
+  { name: "Momentum Intraday", trading: false, totalTrades: 319, pnl: -3820.12, sharpe: 0.21 },
+  { name: "Pairs Hedge Alpha", trading: true, totalTrades: 151, pnl: 12890.4, sharpe: 1.12 },
+  { name: "Breakout Swing", trading: true, totalTrades: 268, pnl: 9340.03, sharpe: 0.88 },
+  { name: "Volatility Carry", trading: false, totalTrades: 77, pnl: -1520.5, sharpe: -0.09 },
+];
+
+const currencyFmt = new Intl.NumberFormat(undefined, {
+  style: "currency",
+  currency: "USD",
+  maximumFractionDigits: 2,
+});
+
 
 export default function StatsInfo({
   title = "Performance Overview",
@@ -235,6 +268,65 @@ export default function StatsInfo({
               </div>
             </section>
           </div>
+           {/* Strategies Data Table (now horizontally scrollable) */}
+            <section className="space-y-3 p-3">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg md:text-xl font-semibold">Strategies</h3>
+                <p className="text-xs text-muted-foreground">
+                  Which strategies are currently trading, with totals and risk-adjusted returns
+                </p>
+              </div>
+
+              <Card className="rounded-2xl border-muted/50 overflow-hidden">
+                <div className="overflow-x-auto">
+                  <Table className="w-full">
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="w-[38%]">Strategy</TableHead>
+                        <TableHead className="w-[18%]">Currently Trading</TableHead>
+                        <TableHead className="w-[16%] text-right">Total Trades</TableHead>
+                        <TableHead className="w-[16%] text-right">Total P&amp;L</TableHead>
+                        <TableHead className="w-[12%] text-right">Sharpe</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {strategiesData.map((row) => (
+                        <TableRow key={row.name}>
+                          <TableCell className="font-medium">{row.name}</TableCell>
+                          <TableCell>
+                            {row.trading ? (
+                              <Badge className="gap-1 bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300">
+                                <Dot className="h-4 w-4" /> Trading
+                              </Badge>
+                            ) : (
+                              <Badge variant="secondary" className="gap-1">
+                                <Dot className="h-4 w-4" /> Paused
+                              </Badge>
+                            )}
+                          </TableCell>
+                          <TableCell className="text-right tabular-nums">
+                            {row.totalTrades.toLocaleString()}
+                          </TableCell>
+                          <TableCell
+                            className={`text-right tabular-nums ${
+                              row.pnl >= 0
+                                ? "text-emerald-600 dark:text-emerald-400"
+                                : "text-rose-600 dark:text-rose-400"
+                            }`}
+                          >
+                            {currencyFmt.format(row.pnl)}
+                          </TableCell>
+                          <TableCell className="text-right tabular-nums">
+                            {row.sharpe.toFixed(2)}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </Card>
+            </section>
+            <ScrollBar orientation="horizontal" />
         </ScrollArea>
       </DialogContent>
     </Dialog>
