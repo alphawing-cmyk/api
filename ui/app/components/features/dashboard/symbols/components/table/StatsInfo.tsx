@@ -1,6 +1,6 @@
 import React from "react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, Bar, BarChart } from "recharts";
-import { TrendingUp, Activity, DollarSign, Users, Clock, BarChart3, SystemIcon, Heart } from "lucide-react";
+import { TrendingUp, Activity, DollarSign, Users, Clock, BarChart3, MonitorCheck, Heart } from "lucide-react";
 import { Button } from "~/components/ui/button";
 import {
   Dialog,
@@ -18,6 +18,8 @@ import {
   ChartTooltipContent
 } from "~/components/ui/chart";
 import { ScrollArea } from "~/components/ui/scroll-area";
+import type { ChartConfig } from "~/components/ui/chart";
+
 
 // Types
 export type StatCard = {
@@ -50,7 +52,7 @@ const defaultCards: StatCard[] = [
   { label: "Engagement", value: "73.2%", delta: "+2.4%", icon: Activity },
   { label: "NPS", value: 48, delta: "+3", icon: Heart },
   { label: "Churn", value: "2.1%", delta: "-0.2%", icon: BarChart3 },
-  { label: "Uptime", value: "99.98%", delta: "±0.00%", icon: SystemIcon as any },
+  { label: "Uptime", value: "99.98%", delta: "±0.00%", icon: MonitorCheck as any },
 ];
 
 const defaultSeries: SeriesPoint[] = Array.from({ length: 24 }).map((_, i) => ({
@@ -74,9 +76,6 @@ const defaultDetails: Array<{ name: string; value: string | number }> = [
   { name: "Avg. CPU", value: "41%" },
 ];
 
-// --- shadcn/ui Chart (first component from docs) ---
-// Example interactive bar chart configuration & data
-import type { ChartConfig } from "@/components/ui/chart";
 
 const interactiveChartConfig = {
   desktop: { label: "Desktop", color: "hsl(var(--chart-1))" },
@@ -92,23 +91,22 @@ const interactiveChartData = [
   { month: "Jun", desktop: 214, mobile: 140 },
 ];
 
-export default function StatsModal({
+export default function StatsInfo({
   title = "Performance Overview",
   description = "A quick look at your key metrics and recent trends.",
   statCards = defaultCards,
   series = defaultSeries,
   seriesKeys = ["value", "revenue"],
   details = defaultDetails,
-  triggerLabel = "Open Stats",
   open,
   onOpenChange,
 }: StatsModalProps) {
   const [activeChart, setActiveChart] = React.useState<keyof typeof interactiveChartConfig>("desktop");
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogTrigger asChild>
-        <Button size="lg" className="rounded-2xl shadow-sm">
-          {triggerLabel}
+      <DialogTrigger asChild className="text-center">
+        <Button variant="indigo" className="shadow-sm">
+            Open
         </Button>
       </DialogTrigger>
 

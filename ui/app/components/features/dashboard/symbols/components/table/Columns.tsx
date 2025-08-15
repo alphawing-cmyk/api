@@ -2,6 +2,7 @@ import { ColumnDef } from "@tanstack/react-table";
 import { DeleteAction } from "./DeleteAction";
 import { EditAction } from "./EditAction";
 import { calculateIndex } from "~/lib/utils";
+import StatsInfo from "./StatsInfo";
 
 export interface SymbolCols {
   id: number;
@@ -86,6 +87,11 @@ const Columns: ColumnDef<{ [key: string]: any }>[] = [
     cell: ({ row }) => (
       <p className="capitalize text-center">{row.original.market_cap}</p>
     ),
+  },
+    {
+    id: "more_info",
+    header: () => <div className="text-center">Statistics</div>,
+    cell: ({ row }) => <StatsInfo />,
   },
   {
     id: "edit",
