@@ -70,13 +70,17 @@ function ChangePill({ last, prev }: { last: number; prev: number }) {
 }
 
 function findLastPrice(data: WatchlistItem) {
-   if(data.historical && data.historical.length >= 1){
-      let dataAdj = data.historical.map((e: HistoricalItem) => {
-          return {...e, [timestamp: parseISO(e?.timestamp)}]
-      })
-
-   }
+  if (data.historical && data.historical.length >= 1) {
+    let dataAdj = data.historical.map((e: HistoricalItem) => {
+      return {
+        ...e,
+        timestamp: parseISO(e?.timestamp ?? "")
+      };
+    }).sort((a,b) => { return a.timestamp.getTime() - b.timestamp.getTime()});
+    return dataAdj[0];
+  }
 }
+
 
 
 
