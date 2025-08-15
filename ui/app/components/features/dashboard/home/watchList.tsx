@@ -15,8 +15,7 @@ import { Avatar, AvatarFallback } from "~/components/ui/avatar";
 import { useLoaderData, useSubmit } from "@remix-run/react";
 import { loader } from "~/routes/_index";
 import { ArrowRight, ArrowDownRight, Minus, ArrowUpRight } from "lucide-react";
-import { parseISO } from "date-fns";
-
+import { parseISO, format } from "date-fns";
 
 export interface HistoricalItem {
   ticker_id?: number;
@@ -38,12 +37,11 @@ export interface HistoricalItem {
   duration?: string;
 }
 
-export interface WatchlistItem{
-   market: string;
-   symnol: string;
-   historical: HistoricalItem[] | [];
+export interface WatchlistItem {
+  market: string;
+  symbol: string;
+  historical: HistoricalItem[] | [];
 }
-
 
 function priceColor(delta: number) {
   if (delta > 0) return "text-green-600";
@@ -70,20 +68,25 @@ function ChangePill({ last, prev }: { last: number; prev: number }) {
 }
 
 function findLastPrice(data: WatchlistItem) {
-  if (data.historical && data.historical.length >= 1) {
-    let dataAdj = data.historical.map((e: HistoricalItem) => {
-      return {
-        ...e,
-        timestamp: parseISO(e?.timestamp ?? "")
-      };
-    }).sort((a,b) => { return a.timestamp.getTime() - b.timestamp.getTime()});
-    return dataAdj[0];
+  if (data.historical && data.historical.length >= 2) {
+    let dataAdj = data.historical
+      .map((e: HistoricalItem) => {
+        return {
+          ...e,
+          timestamp: parseISO(e?.timestamp ?? ""),
+        };
+      })
+      .sort((a, b) => {
+        return a.timestamp.getTime() - b.timestamp.getTime();
+      });
+    return {
+      timestamp: dataAdj[0].timestamp,
+      close: dataAdj[0].close,
+      prev_close: dataAdj[1].close,
+    };
   }
+  return { timestamp: null, close: 0.0, prev_close: 0.0 };
 }
-
-
-
-
 
 const Watchlist = () => {
   const { watchListData, tickersData } = useLoaderData<typeof loader>();
@@ -164,58 +167,66 @@ const Watchlist = () => {
         {watchListDataSorted?.length > 0 && (
           <div className="space-y-2">
             <h4 className="text-sm font-semibold">Watchlist</h4>
-            <ScrollArea className="max-h-48 pr-2">
+            <ScrollArea className="max-h-48 overflow-y-auto pr-2">
               <div className="space-y-2">
-                {watchListDataSorted.map(
-                  (item: {
-                    market: string;
-                    symbol: string;
-                    historical: HistoricalItem[] | [];
-                  }) => {
-                    const q = {last: 20, prev_close: 13.00};
-                    const delta = q.last - q.prev_close;
+                {watchListDataSorted.map((item: WatchlistItem) => {
+                  const q = findLastPrice(item);
+                  const delta = (q.close ?? 0) - (q.prev_close ?? 0);
 
-                    return (
-                      <div
-                        key={item.symbol}
-                        className="flex items-center justify-between border rounded p-2 hover:bg-muted transition-all"
-                      >
-                        <div className="flex items-center gap-3">
-                          <Avatar className="h-8 w-8">
-                            <AvatarFallback>
-                              {item.symbol.slice(0, 2).toUpperCase()}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div className="flex flex-col">
-                            <span className="font-medium">
-                              {item.symbol.toUpperCase()}
+                  return (
+                    <div
+                      key={item.symbol}
+                      className="flex items-center justify-between border rounded p-2 hover:bg-muted transition-all"
+                    >
+                      <div className="flex items-center gap-3">
+                        <Avatar className="h-8 w-8">
+                          <AvatarFallback>
+                            {item.symbol.slice(0, 2).toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex flex-col">
+                          <span className="font-medium">
+                            {item.symbol.toUpperCase()}
+                          </span>
+                          <div className="flex items-center gap-2">
+                            <span
+                              className={`text-sm font-semibold ${priceColor(
+                                delta
+                              )}`}
+                            >
+                              {q?.close?.toFixed(2) ?? 0}
                             </span>
-                            <div className="flex items-center gap-2">
-                              <span
-                                className={`text-sm font-semibold ${priceColor(
-                                  delta
-                                )}`}
-                              >
-                                {q.last.toFixed(2)}
-                              </span>
-                              <ChangePill last={q.last} prev={q.prev_close} />
-                            </div>
+                            <ChangePill
+                              last={q?.close ?? 0}
+                              prev={q?.prev_close ?? 0}
+                            />
+                          </div>
+                          <div>
+                            <span className="text-gray-400 text-xs">
+                              Last Updated:{" "}
+                              {q.timestamp
+                                ? format(
+                                    q.timestamp ?? "",
+                                    "MM/dd/yyyy HH:mm:ss a"
+                                  )
+                                : null}
+                            </span>
                           </div>
                         </div>
-
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() =>
-                            handleRemoveTicker(item.symbol, item.market)
-                          }
-                        >
-                          Remove
-                        </Button>
                       </div>
-                    );
-                  }
-                )}
+
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() =>
+                          handleRemoveTicker(item.symbol, item.market)
+                        }
+                      >
+                        Remove
+                      </Button>
+                    </div>
+                  );
+                })}
               </div>
             </ScrollArea>
           </div>
