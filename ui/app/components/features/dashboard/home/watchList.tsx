@@ -15,6 +15,8 @@ import { Avatar, AvatarFallback } from "~/components/ui/avatar";
 import { useLoaderData, useSubmit } from "@remix-run/react";
 import { loader } from "~/routes/_index";
 import { ArrowRight, ArrowDownRight, Minus, ArrowUpRight } from "lucide-react";
+import { parseISO } from "date-fns";
+
 
 export interface HistoricalItem {
   ticker_id?: number;
@@ -35,6 +37,13 @@ export interface HistoricalItem {
   source?: string;
   duration?: string;
 }
+
+export interface WatchlistItem{
+   market: string;
+   symnol: string;
+   historical: HistoricalItem[] | [];
+}
+
 
 function priceColor(delta: number) {
   if (delta > 0) return "text-green-600";
@@ -60,34 +69,17 @@ function ChangePill({ last, prev }: { last: number; prev: number }) {
   );
 }
 
-/** --- simple deterministic PRNG per symbol so values are stable --- */
-function hashSymbol(sym: string) {
-  let h = 2166136261 >>> 0; // FNV-ish
-  for (let i = 0; i < sym.length; i++) {
-    h ^= sym.charCodeAt(i);
-    h = Math.imul(h, 16777619);
-  }
-  return h >>> 0;
+function findLastPrice(data: WatchlistItem) {
+   if(data.historical && data.historical.length >= 1){
+      let dataAdj = data.historical.map((e: HistoricalItem) => {
+          return {...e, [timestamp: parseISO(e?.timestamp)}]
+      })
+
+   }
 }
-function prng(seed: number) {
-  // xorshift-ish, returns [0,1)
-  let t = seed + 0x6d2b79f5;
-  t = Math.imul(t ^ (t >>> 15), t | 1);
-  t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
-  return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-}
-function genFakeQuote(symbol: string) {
-  const sym = (symbol || "").toUpperCase();
-  const seed = hashSymbol(sym);
-  // base price between 20 and ~520
-  const base = 20 + prng(seed) * 500;
-  // daily change between ~-6% and +6%
-  const changePct = (prng(seed + 1) - 0.5) * 0.12;
-  const last = base;
-  const prev_close = last / (1 + changePct);
-  const round2 = (n: number) => Math.round(n * 100) / 100;
-  return { last: round2(last), prev_close: round2(prev_close) };
-}
+
+
+
 
 const Watchlist = () => {
   const { watchListData, tickersData } = useLoaderData<typeof loader>();
@@ -176,7 +168,7 @@ const Watchlist = () => {
                     symbol: string;
                     historical: HistoricalItem[] | [];
                   }) => {
-                    const q = genFakeQuote(item.symbol);
+                    const q = {last: 20, prev_close: 13.00};
                     const delta = q.last - q.prev_close;
 
                     return (
